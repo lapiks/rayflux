@@ -10,6 +10,10 @@ impl World {
         &self.camera
     }
 
+    pub fn camera_mut(&mut self) -> &mut Camera {
+        &mut self.camera
+    }
+
     pub fn init(&mut self, renderer: &mut Renderer) {
         self.camera.create_uniform_buffer(renderer);
         self.camera.create_bind_group(renderer);

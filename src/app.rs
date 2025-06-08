@@ -83,6 +83,9 @@ impl App {
 
     /// Resize callback
     fn on_resize(&mut self, size: UVec2) {
+        let camera = self.world.camera_mut();
+        camera.update_aspect_ratio(size.x, size.y);
+
         let renderer = self.renderer.as_mut().unwrap();
         renderer.resize(UVec2 {
             x: size.x,

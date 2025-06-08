@@ -84,7 +84,8 @@ impl Camera {
         let view = Mat4::look_at_rh(self.position, self.target, Vec3::Y);
         let proj = Mat4::perspective_rh_gl(self.field_of_view, self.aspect_ratio, self.near, self.far);
         let view_proj = proj * view;
-        self.uniform.view_proj = view_proj.to_cols_array_2d();
+        self.uniform.inv_view_proj = view_proj.inverse().to_cols_array_2d();
+        self.uniform.position = self.position.to_array();
     }
 
     pub fn create_uniform_buffer(&mut self, renderer: &Renderer) {
@@ -132,13 +133,17 @@ impl Camera {
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
-    pub view_proj: [[f32; 4]; 4],
+    pub inv_view_proj: [[f32; 4]; 4],
+    pub position: [f32; 3],
+    pub _padding: f32,
 }
 
 impl Default for CameraUniform {
     fn default() -> Self {
         Self { 
-            view_proj: Mat4::IDENTITY.to_cols_array_2d(), 
+            inv_view_proj: Mat4::IDENTITY.to_cols_array_2d(), 
+            position: Vec3::ZERO.to_array(),
+            _padding: 0.0,
         }
     }
 }
