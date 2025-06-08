@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{engine::{GuiRenderer, Inputs, Renderer, Time}, features::UserInterface};
+use crate::{engine::{GuiRenderer, Inputs, Renderer, Time, World}, features::UserInterface};
 
 pub struct AppContext<'a> {
     pub time: &'a Time,
@@ -11,6 +11,7 @@ pub struct AppContext<'a> {
 
 #[derive(Default)]
 pub struct App {
+    world: World,
     renderer: Option<Renderer>,
     gui_renderer: Option<GuiRenderer>,
     gui: UserInterface,
@@ -21,12 +22,15 @@ pub struct App {
 impl App {
     /// Begin of frame phase
     fn begin_phase(&mut self) {
-
+        let renderer = self.renderer.as_mut().unwrap();
+        self.world.init(renderer);
     }
 
     /// Game logic update phase
     fn update_phase(&mut self) {
+        let renderer = self.renderer.as_mut().unwrap();
         self.time.tick();
+        self.world.update(renderer);
     }
 
     /// Rendering phase
