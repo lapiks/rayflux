@@ -1,1 +1,1 @@
-# wgpu-raytracer
+# Rayflux
