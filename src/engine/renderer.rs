@@ -3,6 +3,8 @@ use std::sync::Arc;
 use glam::UVec2;
 use winit::window::Window;
 
+use crate::engine::{CameraUniform, World};
+
 pub struct Frame {
     pub surface_texture: wgpu::SurfaceTexture,
     pub surface_view: wgpu::TextureView,
@@ -38,6 +40,7 @@ pub struct Renderer {
     render_bind_group: wgpu::BindGroup,
     compute_pipeline: ComputePipeline,
     compute_bind_group: wgpu::BindGroup,
+    camera_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl Renderer {
@@ -67,7 +70,9 @@ impl Renderer {
         let render_pipeline = Self::create_render_pipeline(&device, surface_format);
         let render_bind_group = Self::create_render_bind_group(&device, &render_pipeline.bind_group_layout, &render_target);
 
-        let compute_pipeline = Self::create_compute_pipeline(&device);
+        let camera_bind_group_layout = Self::create_camera_bind_group_layout(&device);
+
+        let compute_pipeline = Self::create_compute_pipeline(&device, &camera_bind_group_layout);
         let compute_bind_group = Self::create_compute_bind_group(&device, &compute_pipeline.bind_group_layout, &render_target);        
 
         let renderer = Renderer {
@@ -82,6 +87,7 @@ impl Renderer {
             render_bind_group,
             compute_pipeline,
             compute_bind_group,
+            camera_bind_group_layout,
         };
 
         // Configure surface for the first time
@@ -231,7 +237,7 @@ impl Renderer {
         })
     }
 
-    fn create_compute_pipeline(device: &wgpu::Device) -> ComputePipeline {
+    fn create_compute_pipeline(device: &wgpu::Device, camera_bind_group_layout: &wgpu::BindGroupLayout) -> ComputePipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("compute shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/compute.wgsl").into()),
@@ -253,12 +259,12 @@ impl Renderer {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("compute pipeline layout"),
-            bind_group_layouts: &[&bind_group_layout],
+            bind_group_layouts: &[&bind_group_layout, camera_bind_group_layout],
             push_constant_ranges: &[],
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("compute Pipeline"),
+            label: Some("compute pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
             entry_point: Some("cs_main"),
@@ -287,6 +293,26 @@ impl Renderer {
                 },
             ],
         })
+    }
+
+    fn create_camera_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<CameraUniform>() as u64),
+                },
+                count: None,
+            }],
+            label: Some("Camera Bind Group Layout"),
+        })
+    }
+
+    pub fn camera_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.camera_bind_group_layout
     }
 
     pub fn device(&self) -> &wgpu::Device {
@@ -362,7 +388,7 @@ impl Renderer {
         frame.surface_texture.present();
     }
 
-    pub fn render(&mut self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame, world: &World) {
         let mut compute_pass = frame.command_encoder.begin_compute_pass(
             &wgpu::ComputePassDescriptor {
                 label: Some("compute pass"),
@@ -372,6 +398,9 @@ impl Renderer {
 
         compute_pass.set_pipeline(&self.compute_pipeline.pipeline);
         compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
+
+        let camera_bind_group = world.camera().bind_group().expect("missing bind group");
+        compute_pass.set_bind_group(1, camera_bind_group, &[]);
         compute_pass.dispatch_workgroups((self.size.x + 7) / 8, (self.size.y + 7) / 8, 1);
 
         drop(compute_pass);

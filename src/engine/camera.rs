@@ -14,6 +14,7 @@ pub struct Camera {
     far: f32,
     uniform: CameraUniform,
     uniform_buffer: Option<wgpu::Buffer>,
+    bind_group: Option<wgpu::BindGroup>,
     dirty: bool,
 }
 
@@ -28,6 +29,7 @@ impl Default for Camera {
             far: 100.0,
             uniform: CameraUniform::default(),
             uniform_buffer: None,
+            bind_group: None,
             dirty: false,
         }
     }
@@ -39,11 +41,11 @@ impl Camera {
         self.dirty = true;
     }
 
-    pub fn get_position(&self) -> Vec3 {
+    pub fn position(&self) -> Vec3 {
         self.position
     }
 
-    pub fn get_position_mut(&mut self) -> &mut Vec3 {
+    pub fn position_mut(&mut self) -> &mut Vec3 {
         self.dirty = true;
         &mut self.position
     }
@@ -53,12 +55,16 @@ impl Camera {
         self.dirty = true;
     }    
     
-    pub fn get_target(&self) -> Vec3 {
+    pub fn target(&self) -> Vec3 {
         self.target
     }
 
-    pub fn get_uniform(&self) -> &CameraUniform {
+    pub fn uniform(&self) -> &CameraUniform {
         &self.uniform
+    }
+
+    pub fn bind_group(&self) -> Option<&wgpu::BindGroup> {
+        self.bind_group.as_ref()
     }
 
     pub fn is_dirty(&self) -> bool {
@@ -96,13 +102,30 @@ impl Camera {
     pub fn update_uniform_buffer(&self, renderer: &Renderer) {
         let buffer = self.uniform_buffer
             .as_ref()
-            .expect("uniform buffer does not exists");
-        
+            .expect("uniform buffer missing");
+
         renderer.queue().write_buffer(
             &buffer, 
             0, 
             bytemuck::bytes_of(&self.uniform)
         );
+    }
+
+    pub fn create_bind_group(&mut self, renderer: &Renderer) {
+        let buffer = self.uniform_buffer
+            .as_ref()
+            .expect("uniform buffer missing");
+
+        self.bind_group = Some(
+            renderer.device().create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &renderer.camera_bind_group_layout(),
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buffer.as_entire_binding(),
+                }],
+                label: Some("Camera::bind_group"),
+            })
+        ) 
     }
 }
 

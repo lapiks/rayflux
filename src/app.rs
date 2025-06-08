@@ -41,7 +41,7 @@ impl App {
         match renderer.begin_frame() {
             Ok(mut frame) => {
                 // Render game
-                renderer.render(&mut frame);
+                renderer.render(&mut frame, &self.world);
 
                 let app_ctx = AppContext {
                     time: &self.time,

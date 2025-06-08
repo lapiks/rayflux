@@ -6,8 +6,13 @@ pub struct World {
 }
 
 impl World {
+    pub fn camera(&self) -> &Camera {
+        &self.camera
+    }
+
     pub fn init(&mut self, renderer: &mut Renderer) {
         self.camera.create_uniform_buffer(renderer);
+        self.camera.create_bind_group(renderer);
     }
 
     pub fn update(&mut self, renderer: &Renderer) {
