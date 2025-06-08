@@ -3,12 +3,26 @@ use std::sync::Arc;
 use glam::UVec2;
 use winit::window::Window;
 
-use crate::engine::Texture;
-
 pub struct Frame {
     pub surface_texture: wgpu::SurfaceTexture,
     pub surface_view: wgpu::TextureView,
     pub command_encoder: wgpu::CommandEncoder,
+}
+
+struct Texture {
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
+    pub sampler: wgpu::Sampler,
+}
+
+struct RenderPipeline {
+    pub bind_group_layout: wgpu::BindGroupLayout,
+    pub pipeline: wgpu::RenderPipeline,
+}
+
+struct ComputePipeline {
+    pub bind_group_layout: wgpu::BindGroupLayout,
+    pub pipeline: wgpu::ComputePipeline,
 }
 
 /// wgpu renderer
@@ -20,9 +34,9 @@ pub struct Renderer {
     surface_format: wgpu::TextureFormat,
     size: UVec2,
     render_target: Texture,
-    render_pipeline: wgpu::RenderPipeline,
+    render_pipeline: RenderPipeline,
     render_bind_group: wgpu::BindGroup,
-    compute_pipeline: wgpu::ComputePipeline,
+    compute_pipeline: ComputePipeline,
     compute_bind_group: wgpu::BindGroup,
 }
 
@@ -48,149 +62,13 @@ impl Renderer {
 
         let size = UVec2 { x: size.width, y: size.height };
 
-        // Create render target
         let render_target = Self::create_render_texture(&device, size);
 
-        // Create render shader
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("render shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/render.wgsl").into()),
-        });
+        let render_pipeline = Self::create_render_pipeline(&device, surface_format);
+        let render_bind_group = Self::create_render_bind_group(&device, &render_pipeline.bind_group_layout, &render_target);
 
-        // Create render pipeline
-        let render_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("render pipeline bind group layout"),
-            entries: &[
-                // Binding 0 : texture
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        multisampled: false,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    },
-                    count: None,
-                },
-                // Binding 1 : sampler
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-        });
-
-        let render_pipeline_layout = device.create_pipeline_layout(
-            &wgpu::PipelineLayoutDescriptor {
-                label: Some("render pipeline layout"),
-                bind_group_layouts: &[&render_bind_group_layout],
-                push_constant_ranges: &[],
-            }
-        );
-
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("render pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vs_main"),
-                buffers: &[], 
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-            fragment: Some(wgpu::FragmentState { 
-                module: &shader,
-                entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState { 
-                    format: surface_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList, 
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-            cache: None,
-        });
-
-        // Create a bind group which contains the render target
-        let render_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("render pipeline bind group"),
-            layout: &render_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&render_target.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&render_target.sampler),
-                },
-            ],
-        });
-
-        // Compute shader
-        let compute_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("compute shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/compute.wgsl").into()),
-        });
-
-        // Create compute pipeline
-        let compute_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("compute bind group layout"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly,
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                },
-                count: None,
-            }],
-        });
-
-        let compute_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("compute pipeline layout"),
-            bind_group_layouts: &[&compute_bind_group_layout],
-            push_constant_ranges: &[],
-        });
-
-        let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("compute Pipeline"),
-            layout: Some(&compute_pipeline_layout),
-            module: &compute_shader,
-            entry_point: Some("cs_main"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
-        });
-
-        // Create a bind group for the compute pipeline
-        let compute_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("compute bind group"),
-            layout: &compute_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&render_target.view),
-                },
-            ],
-        });
+        let compute_pipeline = Self::create_compute_pipeline(&device);
+        let compute_bind_group = Self::create_compute_bind_group(&device, &compute_pipeline.bind_group_layout, &render_target);        
 
         let renderer = Renderer {
             window,
@@ -248,6 +126,167 @@ impl Renderer {
             view, 
             sampler
         }
+    }
+
+    fn create_render_pipeline(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> RenderPipeline {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("render shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/render.wgsl").into()),
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("render pipeline bind group layout"),
+            entries: &[
+                // Binding 0 : texture
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    },
+                    count: None,
+                },
+                // Binding 1 : sampler
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
+        let pipeline_layout = device.create_pipeline_layout(
+            &wgpu::PipelineLayoutDescriptor {
+                label: Some("render pipeline layout"),
+                bind_group_layouts: &[&bind_group_layout],
+                push_constant_ranges: &[],
+            }
+        );
+
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("render pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[], 
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState { 
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: surface_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, 
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+            cache: None,
+        });
+
+        RenderPipeline {
+            bind_group_layout,
+            pipeline,
+        }
+    }
+
+    fn create_render_bind_group(
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        render_target: &Texture,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("render pipeline bind group"),
+            layout: &layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&render_target.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&render_target.sampler),
+                },
+            ],
+        })
+    }
+
+    fn create_compute_pipeline(device: &wgpu::Device) -> ComputePipeline {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("compute shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/compute.wgsl").into()),
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("compute bind group layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::StorageTexture {
+                    access: wgpu::StorageTextureAccess::WriteOnly,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                },
+                count: None,
+            }],
+        });
+
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("compute pipeline layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("compute Pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader,
+            entry_point: Some("cs_main"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            cache: None,
+        });
+
+        ComputePipeline { 
+            bind_group_layout, 
+            pipeline 
+        }
+    }
+
+    fn create_compute_bind_group(
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout, 
+        render_target: &Texture
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("compute bind group"),
+            layout: &layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&render_target.view),
+                },
+            ],
+        })
     }
 
     pub fn device(&self) -> &wgpu::Device {
@@ -331,7 +370,7 @@ impl Renderer {
             }
         );
 
-        compute_pass.set_pipeline(&self.compute_pipeline);
+        compute_pass.set_pipeline(&self.compute_pipeline.pipeline);
         compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
         compute_pass.dispatch_workgroups((self.size.x + 7) / 8, (self.size.y + 7) / 8, 1);
 
@@ -359,7 +398,7 @@ impl Renderer {
             occlusion_query_set: None,
         });
 
-        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_pipeline(&self.render_pipeline.pipeline);
         render_pass.set_bind_group(0, &self.render_bind_group, &[]);
         render_pass.draw(0..3, 0..1);
 
