@@ -31,7 +31,10 @@ fn vs_main(@builtin(vertex_index) vertex_idx : u32) -> VertexOutput {
     return out;
 }
 
+@group(0) @binding(0) var t_color : texture_2d<f32>;
+@group(0) @binding(1) var t_sampler : sampler;
+
 @fragment
 fn fs_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
-    return vec4<f32>(fragUV, 0.0, 1.0);
+    return textureSample(t_color, t_sampler, fragUV);
 }
