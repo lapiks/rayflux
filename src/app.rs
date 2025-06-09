@@ -102,7 +102,7 @@ impl ApplicationHandler for App {
 
         // Create window
         let attributes = Window::default_attributes()
-            .with_title("RayFlux")
+            .with_title("Rayflux")
             .with_inner_size(LogicalSize::new(1600.0, 900.0))
             .with_min_inner_size(LogicalSize::new(100.0, 100.0));
 
