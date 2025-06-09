@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{engine::{GuiRenderer, Inputs, Renderer, Time, World}, features::UserInterface};
+use crate::{engine::{GpuContext, GuiRenderer, Inputs, Renderer, Time, World}, features::UserInterface};
 
 pub struct AppContext<'a> {
     pub time: &'a Time,
@@ -12,6 +12,7 @@ pub struct AppContext<'a> {
 #[derive(Default)]
 pub struct App {
     world: World,
+    context: Option<GpuContext>,
     renderer: Option<Renderer>,
     gui_renderer: Option<GuiRenderer>,
     gui: UserInterface,
@@ -22,26 +23,27 @@ pub struct App {
 impl App {
     /// Begin of frame phase
     fn begin_phase(&mut self) {
-        let renderer = self.renderer.as_mut().unwrap();
-        self.world.init(renderer);
+        let context = self.context.as_mut().unwrap();
+        self.world.init(context);
     }
 
     /// Game logic update phase
     fn update_phase(&mut self) {
-        let renderer = self.renderer.as_mut().unwrap();
+        let context = self.context.as_mut().unwrap();
         self.time.tick();
-        self.world.update(renderer);
+        self.world.update(context);
     }
 
     /// Rendering phase
     fn render_phase(&mut self) {
+        let context = self.context.as_mut().unwrap();
         let renderer = self.renderer.as_mut().unwrap();
         let gui_renderer = self.gui_renderer.as_mut().unwrap();
 
-        match renderer.begin_frame() {
+        match context.begin_frame() {
             Ok(mut frame) => {
-                // Render game
-                renderer.render(&mut frame, &self.world);
+                renderer.pre_render(context, &mut self.world);
+                renderer.render(&mut frame);
 
                 let app_ctx = AppContext {
                     time: &self.time,
@@ -50,11 +52,11 @@ impl App {
                 // Render UI
                 gui_renderer.render(
                     &mut frame,
-                    renderer, 
+                    context, 
                     |ctx| self.gui.run_ui(ctx, &app_ctx)
                 );
 
-                renderer.end_frame(frame);
+                context.end_frame(frame);
             },
             Err(wgpu::SurfaceError::Timeout) => {
                 // This happens when the a frame takes too long to present
@@ -77,20 +79,20 @@ impl App {
     /// End of frame phase
     fn end_phase(&mut self) {
         self.inputs.reset();
-        let renderer = self.renderer.as_mut().unwrap();
-        renderer.window().request_redraw();
+        let context = self.context.as_mut().unwrap();
+        context.window().request_redraw();
     }
 
     /// Resize callback
     fn on_resize(&mut self, size: UVec2) {
         let camera = self.world.camera_mut();
-        camera.update_aspect_ratio(size.x, size.y);
+        camera.update_aspect_ratio(size);
+
+        let context = self.context.as_mut().unwrap();
+        context.resize(size);
 
         let renderer = self.renderer.as_mut().unwrap();
-        renderer.resize(UVec2 {
-            x: size.x,
-            y: size.y,
-        });
+        renderer.resize(context.device(), size);
     }
 }
 
@@ -110,11 +112,12 @@ impl ApplicationHandler for App {
                 .unwrap()
         );
 
-        // Create renderer
-        let renderer = pollster::block_on(Renderer::new(window.clone()));
+        // create gpu context
+        let context = pollster::block_on(GpuContext::new(window.clone()));
         
-        self.gui_renderer = Some(GuiRenderer::new(&renderer));
-        self.renderer = Some(renderer);
+        self.renderer = Some(Renderer::new(&context, &self.world));
+        self.gui_renderer = Some(GuiRenderer::new(&context));
+        self.context = Some(context);
 
         let mut user_interface = UserInterface::default();
         user_interface.init();
@@ -122,9 +125,9 @@ impl ApplicationHandler for App {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
-        let renderer = self.renderer.as_mut().unwrap();
+        let context = self.context.as_mut().unwrap();
         let gui_renderer = self.gui_renderer.as_mut().unwrap();
-        gui_renderer.handle_event(&event, renderer.window());
+        gui_renderer.handle_event(&event, context.window());
 
         match event {
             WindowEvent::CloseRequested => {

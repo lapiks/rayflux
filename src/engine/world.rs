@@ -1,4 +1,4 @@
-use crate::engine::{Camera, Renderer};
+use crate::engine::{Camera, GpuContext};
 
 #[derive(Default)]
 pub struct World {
@@ -14,16 +14,11 @@ impl World {
         &mut self.camera
     }
 
-    pub fn init(&mut self, renderer: &mut Renderer) {
-        self.camera.create_uniform_buffer(renderer);
-        self.camera.create_bind_group(renderer);
+    pub fn init(&mut self, context: &mut GpuContext) {
+
     }
 
-    pub fn update(&mut self, renderer: &Renderer) {
-        if self.camera.is_dirty() {
-            self.camera.update_matrix();
-            self.camera.update_uniform_buffer(renderer);
-            self.camera.set_clean();
-        }
+    pub fn update(&mut self, context: &GpuContext) {
+
     }
 }

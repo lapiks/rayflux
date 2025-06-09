@@ -1,7 +1,7 @@
 use egui_wgpu::ScreenDescriptor;
 use winit::{event::WindowEvent, window::Window};
 
-use super::{Frame, Renderer};
+use crate::engine::{Frame, GpuContext};
 
 pub struct GuiRenderer {
     egui_renderer: egui_wgpu::Renderer,
@@ -10,10 +10,10 @@ pub struct GuiRenderer {
 }
 
 impl GuiRenderer {
-    pub fn new(renderer: &Renderer) -> Self {
+    pub fn new(context: &GpuContext) -> Self {
         let egui_renderer = egui_wgpu::Renderer::new(
-            renderer.device(), 
-            renderer.surface_format(), 
+            context.device(), 
+            context.surface_format(), 
             None, 
             1, 
             false
@@ -25,7 +25,7 @@ impl GuiRenderer {
         let egui_state = egui_winit::State::new(
             egui_context.clone(), 
             viewport_id, 
-            renderer.window(), 
+            context.window(), 
             None, 
             None,
             None
@@ -46,11 +46,11 @@ impl GuiRenderer {
     pub fn render<F>(
         &mut self, 
         frame: &mut Frame, 
-        renderer: &Renderer,
+        context: &GpuContext,
         ui_fn: F,
     ) 
     where F: FnMut(&egui::Context) {
-        let window = renderer.window();
+        let window = context.window();
 
         let raw_input = self.egui_state.take_egui_input(window);
         let full_output = self.egui_context.run(raw_input, ui_fn);
@@ -64,8 +64,8 @@ impl GuiRenderer {
         for (id, image_delta) in &full_output.textures_delta.set {
             self.egui_renderer
                 .update_texture(
-                    renderer.device(), 
-                    renderer.queue(), 
+                    context.device(), 
+                    context.queue(), 
                     *id, 
                     &image_delta
                 );
@@ -78,8 +78,8 @@ impl GuiRenderer {
         };
 
         self.egui_renderer.update_buffers(
-            renderer.device(), 
-            renderer.queue(), 
+            context.device(), 
+            context.queue(), 
             &mut frame.command_encoder,
             &clipped_primitives,
             &screen_desc,

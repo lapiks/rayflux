@@ -1,20 +1,18 @@
-use glam::{Mat4, Vec3};
+use glam::{UVec2, Vec3};
 use wgpu::util::DeviceExt;
 
-use crate::engine::Renderer;
+use crate::engine::GpuContext;
 
 const DEFAULT_POSITION: Vec3 = Vec3::new(2.5, 2.5, 2.5);
 
 pub struct Camera {
     position: Vec3,
     target: Vec3,
+    up: Vec3,
     field_of_view: f32,
     aspect_ratio: f32,
     near: f32,
     far: f32,
-    uniform: CameraUniform,
-    uniform_buffer: Option<wgpu::Buffer>,
-    bind_group: Option<wgpu::BindGroup>,
     dirty: bool,
 }
 
@@ -23,13 +21,11 @@ impl Default for Camera {
         Self { 
             position: DEFAULT_POSITION, 
             target: Vec3::ZERO, 
+            up: Vec3::Y,
             field_of_view: std::f32::consts::FRAC_PI_4,
             aspect_ratio: 1.0,
             near: 0.1,
             far: 100.0,
-            uniform: CameraUniform::default(),
-            uniform_buffer: None,
-            bind_group: None,
             dirty: false,
         }
     }
@@ -59,12 +55,44 @@ impl Camera {
         self.target
     }
 
-    pub fn uniform(&self) -> &CameraUniform {
-        &self.uniform
+    pub fn set_up(&mut self, up: Vec3) {
+        self.up = up;
+        self.dirty = true;
     }
 
-    pub fn bind_group(&self) -> Option<&wgpu::BindGroup> {
-        self.bind_group.as_ref()
+    pub fn up(&self) -> Vec3 {
+        self.up
+    }
+
+    pub fn aspect_ratio(&self) -> f32 {
+        self.aspect_ratio
+    }
+
+    pub fn set_field_of_view(&mut self, fov: f32) {
+        self.field_of_view = fov;
+        self.dirty = true;
+    }
+
+    pub fn field_of_view(&self) -> f32 {
+        self.field_of_view
+    }
+
+    pub fn set_near(&mut self, near: f32) {
+        self.near = near;
+        self.dirty = true;
+    }
+
+    pub fn near(&self) -> f32 {
+        self.near
+    }
+
+    pub fn set_far(&mut self, far: f32) {
+        self.far = far;
+        self.dirty = true;
+    }
+
+    pub fn far(&self) -> f32 {
+        self.far
     }
 
     pub fn is_dirty(&self) -> bool {
@@ -75,75 +103,8 @@ impl Camera {
         self.dirty = false;
     }
 
-    pub fn update_aspect_ratio(&mut self, width: u32, height: u32) {
-        self.aspect_ratio = width as f32 / height as f32;
+    pub fn update_aspect_ratio(&mut self, size: UVec2) {
+        self.aspect_ratio = size.x as f32 / size.y as f32;
         self.dirty = true;
-    }
-
-    pub fn update_matrix(&mut self) {
-        let view = Mat4::look_at_rh(self.position, self.target, Vec3::Y);
-        let proj = Mat4::perspective_rh_gl(self.field_of_view, self.aspect_ratio, self.near, self.far);
-        let view_proj = proj * view;
-        self.uniform.inv_view_proj = view_proj.inverse().to_cols_array_2d();
-        self.uniform.position = self.position.to_array();
-    }
-
-    pub fn create_uniform_buffer(&mut self, renderer: &Renderer) {
-        self.uniform_buffer = Some(
-            renderer.device().create_buffer_init(
-                &wgpu::util::BufferInitDescriptor {
-                    label: Some("camera uniform buffer"),
-                    contents: bytemuck::bytes_of(&self.uniform),
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                }
-            )
-        );
-    }
-
-    pub fn update_uniform_buffer(&self, renderer: &Renderer) {
-        let buffer = self.uniform_buffer
-            .as_ref()
-            .expect("uniform buffer missing");
-
-        renderer.queue().write_buffer(
-            &buffer, 
-            0, 
-            bytemuck::bytes_of(&self.uniform)
-        );
-    }
-
-    pub fn create_bind_group(&mut self, renderer: &Renderer) {
-        let buffer = self.uniform_buffer
-            .as_ref()
-            .expect("uniform buffer missing");
-
-        self.bind_group = Some(
-            renderer.device().create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &renderer.camera_bind_group_layout(),
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }],
-                label: Some("Camera::bind_group"),
-            })
-        ) 
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct CameraUniform {
-    pub inv_view_proj: [[f32; 4]; 4],
-    pub position: [f32; 3],
-    pub _padding: f32,
-}
-
-impl Default for CameraUniform {
-    fn default() -> Self {
-        Self { 
-            inv_view_proj: Mat4::IDENTITY.to_cols_array_2d(), 
-            position: Vec3::ZERO.to_array(),
-            _padding: 0.0,
-        }
     }
 }

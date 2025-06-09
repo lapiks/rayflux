@@ -1,15 +1,7 @@
-use std::sync::Arc;
+use glam::{Mat4, UVec2, Vec3};
+use wgpu::util::DeviceExt;
 
-use glam::UVec2;
-use winit::window::Window;
-
-use crate::engine::{CameraUniform, World};
-
-pub struct Frame {
-    pub surface_texture: wgpu::SurfaceTexture,
-    pub surface_view: wgpu::TextureView,
-    pub command_encoder: wgpu::CommandEncoder,
-}
+use crate::engine::{Camera, Frame, GpuContext, World};
 
 struct Texture {
     pub texture: wgpu::Texture,
@@ -18,85 +10,41 @@ struct Texture {
 }
 
 struct RenderPipeline {
-    pub bind_group_layout: wgpu::BindGroupLayout,
     pub pipeline: wgpu::RenderPipeline,
+    pub image_bind_group: wgpu::BindGroup,
 }
 
 struct ComputePipeline {
-    pub bind_group_layout: wgpu::BindGroupLayout,
     pub pipeline: wgpu::ComputePipeline,
+    pub image_bind_group: wgpu::BindGroup,
+    pub camera_bind_group: wgpu::BindGroup,
+    pub camera_buffer: wgpu::Buffer,
 }
 
-/// wgpu renderer
 pub struct Renderer {
-    window: Arc<Window>,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    surface: wgpu::Surface<'static>,
-    surface_format: wgpu::TextureFormat,
-    size: UVec2,
     render_target: Texture,
     render_pipeline: RenderPipeline,
-    render_bind_group: wgpu::BindGroup,
     compute_pipeline: ComputePipeline,
-    compute_bind_group: wgpu::BindGroup,
-    camera_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl Renderer {
-    pub async fn new(window: Arc<Window>) -> Self {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+    pub fn new(context: &GpuContext, world: &World) -> Self {
+        let device = context.device();
+        
+        let render_target = Self::create_render_target(&device, context.size());
+        let render_pipeline = Self::create_render_pipeline(&device, context.surface_format(), &render_target);
 
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let camera = world.camera();
+        let compute_pipeline = Self::create_compute_pipeline(&device, &render_target, camera);   
 
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default(), None)
-            .await
-            .unwrap();
-
-        let size = window.inner_size();
-
-        let surface = instance.create_surface(window.clone()).unwrap();
-        let cap = surface.get_capabilities(&adapter);
-        let surface_format = cap.formats[0];
-
-        let size = UVec2 { x: size.width, y: size.height };
-
-        let render_target = Self::create_render_texture(&device, size);
-
-        let render_pipeline = Self::create_render_pipeline(&device, surface_format);
-        let render_bind_group = Self::create_render_bind_group(&device, &render_pipeline.bind_group_layout, &render_target);
-
-        let camera_bind_group_layout = Self::create_camera_bind_group_layout(&device);
-
-        let compute_pipeline = Self::create_compute_pipeline(&device, &camera_bind_group_layout);
-        let compute_bind_group = Self::create_compute_bind_group(&device, &compute_pipeline.bind_group_layout, &render_target);        
-
-        let renderer = Renderer {
-            window,
-            device,
-            queue,
-            size,
-            surface,
-            surface_format,
-            render_pipeline,
+        Renderer {
             render_target,
-            render_bind_group,
+            render_pipeline,
             compute_pipeline,
-            compute_bind_group,
-            camera_bind_group_layout,
-        };
-
-        // Configure surface for the first time
-        renderer.configure_surface();
-
-        renderer
+        }
     }
 
-    fn create_render_texture(device: &wgpu::Device, size: UVec2) -> Texture {
+    fn create_render_target(device: &wgpu::Device, size: UVec2) -> Texture {
         let texture_desc = wgpu::TextureDescriptor {
             label: Some("render target texture"),
             size: wgpu::Extent3d {
@@ -134,14 +82,14 @@ impl Renderer {
         }
     }
 
-    fn create_render_pipeline(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> RenderPipeline {
+    fn create_render_pipeline(device: &wgpu::Device, surface_format: wgpu::TextureFormat, render_target: &Texture) -> RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("render shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/render.wgsl").into()),
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("render pipeline bind group layout"),
+        let image_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("image bind group layout"),
             entries: &[
                 // Binding 0 : texture
                 wgpu::BindGroupLayoutEntry {
@@ -167,7 +115,7 @@ impl Renderer {
         let pipeline_layout = device.create_pipeline_layout(
             &wgpu::PipelineLayoutDescriptor {
                 label: Some("render pipeline layout"),
-                bind_group_layouts: &[&bind_group_layout],
+                bind_group_layouts: &[&image_bind_group_layout],
                 push_constant_ranges: &[],
             }
         );
@@ -210,20 +158,9 @@ impl Renderer {
             cache: None,
         });
 
-        RenderPipeline {
-            bind_group_layout,
-            pipeline,
-        }
-    }
-
-    fn create_render_bind_group(
-        device: &wgpu::Device,
-        layout: &wgpu::BindGroupLayout,
-        render_target: &Texture,
-    ) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("render pipeline bind group"),
-            layout: &layout,
+        let image_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("image bind group"),
+            layout: &image_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -234,17 +171,22 @@ impl Renderer {
                     resource: wgpu::BindingResource::Sampler(&render_target.sampler),
                 },
             ],
-        })
-    }
-
-    fn create_compute_pipeline(device: &wgpu::Device, camera_bind_group_layout: &wgpu::BindGroupLayout) -> ComputePipeline {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("compute shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/compute.wgsl").into()),
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("compute bind group layout"),
+        RenderPipeline {
+            pipeline,
+            image_bind_group,
+        }
+    }
+
+    fn create_compute_pipeline(device: &wgpu::Device, render_target: &Texture, camera: &Camera) -> ComputePipeline {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("compute shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/raytracer.wgsl").into()),
+        });
+
+        let image_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("image bind group layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::COMPUTE,
@@ -257,9 +199,23 @@ impl Renderer {
             }],
         });
 
+        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<CameraData>() as u64),
+                },
+                count: None,
+            }],
+            label: Some("Camera bind group layout"),
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("compute pipeline layout"),
-            bind_group_layouts: &[&bind_group_layout, camera_bind_group_layout],
+            bind_group_layouts: &[&image_bind_group_layout, &camera_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -272,123 +228,65 @@ impl Renderer {
             cache: None,
         });
 
-        ComputePipeline { 
-            bind_group_layout, 
-            pipeline 
-        }
-    }
-
-    fn create_compute_bind_group(
-        device: &wgpu::Device,
-        layout: &wgpu::BindGroupLayout, 
-        render_target: &Texture
-    ) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("compute bind group"),
-            layout: &layout,
+        let image_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("image bind group"),
+            layout: &image_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(&render_target.view),
                 },
             ],
-        })
-    }
+        });
 
-    fn create_camera_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
+        let camera_data = CameraData::from_camera(camera);
+
+        let camera_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("camera uniform buffer"),
+                contents: bytemuck::bytes_of(&camera_data),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<CameraUniform>() as u64),
-                },
-                count: None,
+                resource: camera_buffer.as_entire_binding(),
             }],
-            label: Some("Camera Bind Group Layout"),
-        })
+            label: Some("camera bind group"),
+        });
+
+        ComputePipeline { 
+            pipeline,
+            image_bind_group,
+            camera_bind_group,
+            camera_buffer,
+        }
     }
 
-    pub fn camera_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.camera_bind_group_layout
-    }
-
-    pub fn device(&self) -> &wgpu::Device {
-        &self.device
-    }
-
-    pub fn queue(&self) -> &wgpu::Queue {
-        &self.queue
-    }
-
-    pub fn window(&self) -> &Window {
-        &self.window
-    }
-
-    pub fn surface_format(&self) -> wgpu::TextureFormat {
-        self.surface_format
-    }
-
-    pub fn resize(&mut self, new_size: UVec2) {
-        self.size = new_size;
-
+    pub fn resize(&mut self, device: &wgpu::Device, new_size: UVec2) {
         // recreate render target
-        self.render_target = Self::create_render_texture(&self.device, new_size);
-
-        // reconfigure the surface
-        self.configure_surface();
+        self.render_target = Self::create_render_target(device, new_size);
     }
 
-    fn configure_surface(&self) {
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: self.surface_format,
-            view_formats: vec![self.surface_format.add_srgb_suffix()],
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
-            width: self.size.x,
-            height: self.size.y,
-            desired_maximum_frame_latency: 2,
-            present_mode: wgpu::PresentMode::AutoVsync,
-        };
-        self.surface.configure(&self.device, &surface_config);
+    /// Prepare rendering
+    pub fn pre_render(&mut self, context: &GpuContext, world: &mut World) {
+        let camera = world.camera_mut();
+        if camera.is_dirty() {
+            // Camera has changed, update gpu buffer
+            let camera_data: CameraData = CameraData::from_camera(camera);
+            context.queue().write_buffer(
+                &self.compute_pipeline.camera_buffer, 
+                0, 
+                bytemuck::bytes_of(&camera_data)
+            );
+            camera.set_clean();
+        }
     }
 
-    pub fn begin_frame(&self) -> Result<Frame, wgpu::SurfaceError>{
-        // Create texture view
-        let surface_texture = self
-            .surface
-            .get_current_texture()
-            .expect("failed to acquire next swapchain texture");
-
-        let surface_view = surface_texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor {
-                // Without add_srgb_suffix() the image we will be working with
-                // might not be "gamma correct".
-                format: Some(self.surface_format.add_srgb_suffix()),
-                ..Default::default()
-            });
-
-        // Create a command encoder
-        let command_encoder = self.device.create_command_encoder(&Default::default());
-
-        Ok(Frame {
-            surface_texture,
-            surface_view,
-            command_encoder,
-        })
-    }
-
-    pub fn end_frame(&self, frame: Frame) {
-        // Submit the command in the queue to execute
-        self.queue.submit([frame.command_encoder.finish()]);
-        self.window.pre_present_notify();
-        frame.surface_texture.present();
-    }
-
-    pub fn render(&mut self, frame: &mut Frame, world: &World) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let mut compute_pass = frame.command_encoder.begin_compute_pass(
             &wgpu::ComputePassDescriptor {
                 label: Some("compute pass"),
@@ -397,11 +295,9 @@ impl Renderer {
         );
 
         compute_pass.set_pipeline(&self.compute_pipeline.pipeline);
-        compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
-
-        let camera_bind_group = world.camera().bind_group().expect("missing bind group");
-        compute_pass.set_bind_group(1, camera_bind_group, &[]);
-        compute_pass.dispatch_workgroups((self.size.x + 7) / 8, (self.size.y + 7) / 8, 1);
+        compute_pass.set_bind_group(0, &self.compute_pipeline.image_bind_group, &[]);
+        compute_pass.set_bind_group(1, &self.compute_pipeline.camera_bind_group, &[]);
+        compute_pass.dispatch_workgroups((frame.size.x + 7) / 8, (frame.size.y + 7) / 8, 1);
 
         drop(compute_pass);
 
@@ -428,9 +324,50 @@ impl Renderer {
         });
 
         render_pass.set_pipeline(&self.render_pipeline.pipeline);
-        render_pass.set_bind_group(0, &self.render_bind_group, &[]);
+        render_pass.set_bind_group(0, &self.render_pipeline.image_bind_group, &[]);
         render_pass.draw(0..3, 0..1);
 
         drop(render_pass);
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct CameraData {
+    pub inv_view_proj: [[f32; 4]; 4],
+    pub position: [f32; 3],
+    pub _padding: f32,
+}
+
+impl Default for CameraData {
+    fn default() -> Self {
+        Self { 
+            inv_view_proj: Mat4::IDENTITY.to_cols_array_2d(), 
+            position: Vec3::ZERO.to_array(),
+            _padding: 0.0,
+        }
+    }
+}
+
+impl CameraData {
+    fn from_camera(camera: &Camera) -> CameraData {
+        let view = Mat4::look_at_rh(
+            camera.position(), 
+            camera.target(), 
+            camera.up()
+        );
+        let proj = Mat4::perspective_rh_gl(
+            camera.field_of_view(), 
+            camera.aspect_ratio(), 
+            camera.near(), 
+            camera.far()
+        );
+        let inv_view_proj = (proj * view).inverse();
+
+        CameraData { 
+            inv_view_proj: inv_view_proj.to_cols_array_2d(), 
+            position: camera.position().to_array(), 
+            _padding: 0.0 
+        }
     }
 }
