@@ -1,7 +1,4 @@
 use glam::{UVec2, Vec3};
-use wgpu::util::DeviceExt;
-
-use crate::engine::GpuContext;
 
 const DEFAULT_POSITION: Vec3 = Vec3::new(2.5, 2.5, 2.5);
 
