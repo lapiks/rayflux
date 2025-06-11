@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.23.0"
+clap = { version = "4.5.40", features = ["derive"] }
 egui = "0.31.1"
 egui-wgpu = "0.31.1"
 egui-winit = "0.31.1"

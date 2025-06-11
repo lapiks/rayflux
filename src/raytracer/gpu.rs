@@ -1,18 +1,7 @@
 use glam::{Mat4, UVec2, Vec3};
 use wgpu::util::DeviceExt;
 
-use crate::engine::{Camera, Frame, GpuContext, World};
-
-struct Texture {
-    pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
-}
-
-struct RenderPipeline {
-    pub pipeline: wgpu::RenderPipeline,
-    pub image_bind_group: wgpu::BindGroup,
-}
+use crate::{engine::{Camera, Frame, GpuContext, Scene, Texture}, raytracer::RaytracerImpl};
 
 struct ComputePipeline {
     pub pipeline: wgpu::ComputePipeline,
@@ -21,25 +10,33 @@ struct ComputePipeline {
     pub camera_buffer: wgpu::Buffer,
 }
 
-pub struct Renderer {
+/// A gpu ray tracer
+pub struct GpuRaytracer {
     render_target: Texture,
-    render_pipeline: RenderPipeline,
     compute_pipeline: ComputePipeline,
 }
 
-impl Renderer {
-    pub fn new(context: &GpuContext, world: &World) -> Self {
+impl RaytracerImpl for GpuRaytracer {
+    fn render(&self) {
+        todo!()
+    }
+    
+    fn output(&self) -> &crate::output::RaytracerOutput {
+        todo!()
+    }
+}
+
+impl GpuRaytracer {
+    pub fn new(context: &GpuContext, scene: &Scene, size: UVec2) -> Self {
         let device = context.device();
         
-        let render_target = Self::create_render_target(&device, context.size());
-        let render_pipeline = Self::create_render_pipeline(&device, context.surface_format(), &render_target);
+        let render_target = Self::create_render_target(&device, size);
 
-        let camera = world.camera();
+        let camera = scene.camera();
         let compute_pipeline = Self::create_compute_pipeline(&device, &render_target, camera);   
 
-        Renderer {
+        GpuRaytracer {
             render_target,
-            render_pipeline,
             compute_pipeline,
         }
     }
@@ -82,107 +79,10 @@ impl Renderer {
         }
     }
 
-    fn create_render_pipeline(device: &wgpu::Device, surface_format: wgpu::TextureFormat, render_target: &Texture) -> RenderPipeline {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("render shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/render.wgsl").into()),
-        });
-
-        let image_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("image bind group layout"),
-            entries: &[
-                // Binding 0 : texture
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        multisampled: false,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    },
-                    count: None,
-                },
-                // Binding 1 : sampler
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-        });
-
-        let pipeline_layout = device.create_pipeline_layout(
-            &wgpu::PipelineLayoutDescriptor {
-                label: Some("render pipeline layout"),
-                bind_group_layouts: &[&image_bind_group_layout],
-                push_constant_ranges: &[],
-            }
-        );
-
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("render pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vs_main"),
-                buffers: &[], 
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-            fragment: Some(wgpu::FragmentState { 
-                module: &shader,
-                entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState { 
-                    format: surface_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList, 
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-            cache: None,
-        });
-
-        let image_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("image bind group"),
-            layout: &image_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&render_target.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&render_target.sampler),
-                },
-            ],
-        });
-
-        RenderPipeline {
-            pipeline,
-            image_bind_group,
-        }
-    }
-
     fn create_compute_pipeline(device: &wgpu::Device, render_target: &Texture, camera: &Camera) -> ComputePipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("compute shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/raytracer.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("raytracer.wgsl").into()),
         });
 
         let image_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -272,8 +172,8 @@ impl Renderer {
     }
 
     /// Prepare rendering
-    pub fn pre_render(&mut self, context: &GpuContext, world: &mut World) {
-        let camera = world.camera_mut();
+    pub fn pre_render(&mut self, context: &GpuContext, scene: &mut Scene) {
+        let camera = scene.camera_mut();
         if camera.is_dirty() {
             // Camera has changed, update gpu buffer
             let camera_data: CameraData = CameraData::from_camera(camera);
@@ -300,34 +200,6 @@ impl Renderer {
         compute_pass.dispatch_workgroups((frame.size.x + 7) / 8, (frame.size.y + 7) / 8, 1);
 
         drop(compute_pass);
-
-        let mut render_pass = frame.command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &frame.surface_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(
-                        wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }
-                    ),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
-
-        render_pass.set_pipeline(&self.render_pipeline.pipeline);
-        render_pass.set_bind_group(0, &self.render_pipeline.image_bind_group, &[]);
-        render_pass.draw(0..3, 0..1);
-
-        drop(render_pass);
     }
 }
 

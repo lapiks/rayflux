@@ -1,11 +1,11 @@
 use crate::engine::{Camera, GpuContext};
 
 #[derive(Default)]
-pub struct World {
+pub struct Scene {
     camera: Camera,
 }
 
-impl World {
+impl Scene {
     pub fn camera(&self) -> &Camera {
         &self.camera
     }
