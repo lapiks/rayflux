@@ -3,10 +3,9 @@ use winit::event_loop::{ControlFlow, EventLoop};
 
 use crate::{output::{file::FileApp, window::WindowApp, OutputMode}, raytracer::RaytracerType};
 
+mod common;
 mod raytracer;
 mod output;
-mod common;
-mod features;
 
 #[derive(Parser)]
 struct Args {
