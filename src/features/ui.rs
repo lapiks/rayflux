@@ -2,13 +2,13 @@ use crate::output::window::AppContext;
 
 
 /// Gives access to gui rendering
-pub trait FeatureUi {
+pub trait UiFeature {
     fn ui(&mut self, ctx: &egui::Context, app_ctx: &AppContext);
 }
 
 #[derive(Default)]
 pub struct UserInterface {
-    features: Vec<Box<dyn FeatureUi>>,
+    features: Vec<Box<dyn UiFeature>>,
 }
 
 impl UserInterface {
@@ -18,7 +18,7 @@ impl UserInterface {
     }
 
     /// Register a feature UI
-    pub fn register(&mut self, feature: Box<dyn FeatureUi>) {
+    pub fn register(&mut self, feature: Box<dyn UiFeature>) {
         self.features.push(feature);
     }
 
@@ -33,7 +33,7 @@ impl UserInterface {
 #[derive(Default)]
 pub struct Performances {}
 
-impl FeatureUi for Performances {
+impl UiFeature for Performances {
     fn ui(&mut self, ctx: &egui::Context, app_ctx: &AppContext) {
         egui::Window::new("Performances")
             .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10.0, 10.0)) // flottant en haut à droite
