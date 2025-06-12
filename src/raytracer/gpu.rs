@@ -5,6 +5,7 @@ use crate::{common::{Camera, Frame, GpuContext, Scene, Texture}, raytracer::{Ray
 
 struct ComputePipeline {
     pub pipeline: wgpu::ComputePipeline,
+    pub image_bind_group_layout: wgpu::BindGroupLayout,
     pub image_bind_group: wgpu::BindGroup,
     pub camera_bind_group: wgpu::BindGroup,
     pub camera_buffer: wgpu::Buffer,
@@ -124,16 +125,7 @@ impl GpuRaytracer {
             cache: None,
         });
 
-        let image_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("image bind group"),
-            layout: &image_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&render_target.view),
-                },
-            ],
-        });
+        let image_bind_group = Self::create_image_bind_group(device, &image_bind_group_layout, render_target);
 
         let camera_data = CameraData::from_camera(camera);
 
@@ -156,15 +148,34 @@ impl GpuRaytracer {
 
         ComputePipeline { 
             pipeline,
+            image_bind_group_layout,
             image_bind_group,
             camera_bind_group,
             camera_buffer,
         }
     }
 
+    fn create_image_bind_group(device: &wgpu::Device, layout: &wgpu::BindGroupLayout, render_target: &Texture) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("image bind group"),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&render_target.view),
+                },
+            ],
+        })
+    }
+
     pub fn resize(&mut self, device: &wgpu::Device, new_size: UVec2) {
         // recreate render target
         self.render_target = Self::create_render_target(device, new_size);
+        self.compute_pipeline.image_bind_group = Self::create_image_bind_group(
+            device, 
+            &self.compute_pipeline.image_bind_group_layout, 
+            &self.render_target
+        );
     }
 
     /// Prepare rendering

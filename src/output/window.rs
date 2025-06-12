@@ -108,8 +108,23 @@ impl WindowApp {
         camera.update_aspect_ratio(size);
 
         let context = self.context.as_mut().unwrap();
+        let device = context.device();
+
+        let raytracer = self.raytracer.as_mut().unwrap();
+        match raytracer {
+            Raytracer::Cpu(cpu_raytracer) => todo!(),
+            Raytracer::Gpu(gpu_raytracer) => gpu_raytracer.resize(device, size),
+        }
+
+        let output = raytracer.output();
+        let output_texture = match output {
+            RaytracerOutput::WgpuTexture(texture) => texture,
+            RaytracerOutput::Image => todo!(),
+        };
+
         let renderer = self.renderer.as_mut().unwrap();
-        renderer.resize(context.device(), size);
+        renderer.resize_surface(device, size);
+        renderer.update_image_bind_group(device, output_texture);
     }
 }
 
@@ -210,15 +225,16 @@ impl ApplicationHandler for WindowApp {
 
 struct RenderPipeline {
     pub pipeline: wgpu::RenderPipeline,
+    pub image_bind_group_layout: wgpu::BindGroupLayout,
     pub image_bind_group: wgpu::BindGroup,
 }
 
-/// Render a texture to a fullscreen triangle
+/// Render a texture to a fullscreen triangle and draw the result on the window surface
 pub struct FullScreenRenderer {
     window: Arc<Window>,
     surface: wgpu::Surface<'static>,
     surface_format: wgpu::TextureFormat,
-    size: UVec2,
+    surface_size: UVec2,
     render_pipeline: RenderPipeline,
 }
 
@@ -230,7 +246,7 @@ impl FullScreenRenderer {
         let cap = surface.get_capabilities(&context.adapter());
         let surface_format = cap.formats[0];
 
-        let size = UVec2 { x: size.width, y: size.height };     
+        let surface_size = UVec2 { x: size.width, y: size.height };     
 
         let device = context.device();
 
@@ -245,7 +261,7 @@ impl FullScreenRenderer {
             window,
             surface,
             surface_format,
-            size,
+            surface_size,
             render_pipeline 
         };
 
@@ -263,12 +279,12 @@ impl FullScreenRenderer {
         self.surface_format
     }
 
-    pub fn size(&self) -> UVec2 {
-        self.size
+    pub fn surface_size(&self) -> UVec2 {
+        self.surface_size
     }
 
-    pub fn resize(&mut self, device: &wgpu::Device, new_size: UVec2) {
-        self.size = new_size;
+    pub fn resize_surface(&mut self, device: &wgpu::Device, new_size: UVec2) {
+        self.surface_size = new_size;
 
         // reconfigure the surface
         self.configure_surface(device);
@@ -280,8 +296,8 @@ impl FullScreenRenderer {
             format: self.surface_format,
             view_formats: vec![self.surface_format.add_srgb_suffix()],
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
-            width: self.size.x,
-            height: self.size.y,
+            width: self.surface_size.x,
+            height: self.surface_size.y,
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
@@ -364,25 +380,38 @@ impl FullScreenRenderer {
             cache: None,
         });
 
-        let image_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("image bind group"),
-            layout: &image_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&render_target.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&render_target.sampler),
-                },
-            ],
-        });
+        let image_bind_group = Self::create_image_bind_group(device, &image_bind_group_layout, render_target);
 
         RenderPipeline {
             pipeline,
+            image_bind_group_layout,
             image_bind_group,
         }
+    }
+
+    fn create_image_bind_group(device: &wgpu::Device, layout: &wgpu::BindGroupLayout, image: &Texture) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("image bind group"),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&image.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&image.sampler),
+                },
+            ],
+        })
+    }
+
+    pub fn update_image_bind_group(&mut self, device: &wgpu::Device, image: &Texture) {
+        self.render_pipeline.image_bind_group = Self::create_image_bind_group(
+            device, 
+            &self.render_pipeline.image_bind_group_layout, 
+            image
+        )
     }
 
     pub fn begin_frame(&self, context: &GpuContext) -> Result<Frame, wgpu::SurfaceError>{
@@ -407,7 +436,7 @@ impl FullScreenRenderer {
         Ok(Frame {
             surface_texture,
             surface_view,
-            size: self.size,
+            size: self.surface_size,
             command_encoder,
         })
     }
