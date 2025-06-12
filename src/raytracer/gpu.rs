@@ -169,8 +169,9 @@ impl GpuRaytracer {
     }
 
     pub fn resize(&mut self, device: &wgpu::Device, new_size: UVec2) {
-        // recreate render target
+        // Recreate render target
         self.render_target = Self::create_render_target(device, new_size);
+        // Recreate corresponding bind group
         self.compute_pipeline.image_bind_group = Self::create_image_bind_group(
             device, 
             &self.compute_pipeline.image_bind_group_layout, 
@@ -194,6 +195,7 @@ impl GpuRaytracer {
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
+        // Ray tracer in a compute pass
         let mut compute_pass = frame.command_encoder.begin_compute_pass(
             &wgpu::ComputePassDescriptor {
                 label: Some("compute pass"),

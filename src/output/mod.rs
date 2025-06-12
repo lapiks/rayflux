@@ -1,7 +1,5 @@
 use clap::ValueEnum;
 
-use crate::common::Texture;
-
 pub mod window;
 pub mod file;
 

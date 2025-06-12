@@ -51,8 +51,10 @@ impl WindowApp {
         let renderer = self.renderer.as_mut().unwrap();
         let gui_renderer = self.gui_renderer.as_mut().unwrap();
 
+        // Start rendering
         match renderer.begin_frame(context) {
             Ok(mut frame) => {
+                // Execute raytracer
                 match raytracer {
                     Raytracer::Cpu(cpu_raytracer) => cpu_raytracer.render(),
                     Raytracer::Gpu(gpu_raytracer) => {
@@ -61,6 +63,7 @@ impl WindowApp {
                     },
                 }
 
+                // Render raytracer's result on the window
                 renderer.render(&mut frame);
 
                 let app_ctx = AppContext {
@@ -75,6 +78,7 @@ impl WindowApp {
                     |ctx| self.gui.run_ui(ctx, &app_ctx)
                 );
 
+                // End rendering
                 renderer.end_frame(context, frame);
             },
             Err(wgpu::SurfaceError::Timeout) => {
@@ -104,12 +108,14 @@ impl WindowApp {
 
     /// Resize callback
     fn on_resize(&mut self, size: UVec2) {
+        // Update camera
         let camera = self.scene.camera_mut();
         camera.update_aspect_ratio(size);
 
         let context = self.context.as_mut().unwrap();
         let device = context.device();
 
+        // Update raytracer output size
         let raytracer = self.raytracer.as_mut().unwrap();
         match raytracer {
             Raytracer::Cpu(cpu_raytracer) => todo!(),
@@ -122,6 +128,7 @@ impl WindowApp {
             RaytracerOutput::Image => todo!(),
         };
 
+        // Update renderer
         let renderer = self.renderer.as_mut().unwrap();
         renderer.resize_surface(device, size);
         renderer.update_image_bind_group(device, output_texture);
