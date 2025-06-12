@@ -5,7 +5,8 @@ You can choose to display the result in real-time in a window or save it as a PN
 
 ## Features
 
-- CPU and GPU raytracing backends
+- CPU raytracing
+- GPU raytracing using wgpu
 - Real-time rendering in a window
 - Image export as PNG
 
