@@ -131,7 +131,7 @@ async fn save_texture_as_png<P: AsRef<Path>>(
 
         for y in 0..texture.size.y {
             let row_start = y * padded_bytes_per_row;
-            let row_end = row_start + (texture.size.x * bytes_per_pixel);
+            let row_end = row_start + unpadded_bytes_per_row;
             let row = &view[row_start as usize..row_end as usize];
 
             for chunk in row.chunks_exact(4) {
