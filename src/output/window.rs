@@ -4,7 +4,11 @@ use egui_wgpu::ScreenDescriptor;
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{common::{Frame, GpuContext, Inputs, Scene, Texture, Time}, features::UserInterface, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}};
+use crate::{
+    common::{GpuContext, Inputs, Scene, Texture, Time}, 
+    features::UserInterface, 
+    raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}
+};
 
 pub struct AppContext<'a> {
     pub time: &'a Time,
@@ -59,7 +63,7 @@ impl WindowApp {
                     Raytracer::Cpu(cpu_raytracer) => cpu_raytracer.render(),
                     Raytracer::Gpu(gpu_raytracer) => {
                         gpu_raytracer.pre_render(context, &mut self.scene);
-                        gpu_raytracer.render(&mut frame)
+                        gpu_raytracer.render(&mut frame.command_encoder);
                     },
                 }
 
@@ -228,6 +232,13 @@ impl ApplicationHandler for WindowApp {
             _ => (),
         }
     }
+}
+
+pub struct Frame {
+    pub surface_texture: wgpu::SurfaceTexture,
+    pub surface_view: wgpu::TextureView,
+    pub size: UVec2,
+    pub command_encoder: wgpu::CommandEncoder,
 }
 
 struct RenderPipeline {

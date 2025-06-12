@@ -1,7 +1,7 @@
 use glam::{Mat4, UVec2, Vec3};
 use wgpu::util::DeviceExt;
 
-use crate::{common::{Camera, Frame, GpuContext, Scene, Texture}, raytracer::{RaytracerImpl, RaytracerOutput}};
+use crate::{common::{Camera, GpuContext, Scene, Texture}, raytracer::{RaytracerImpl, RaytracerOutput}};
 
 struct ComputePipeline {
     pub pipeline: wgpu::ComputePipeline,
@@ -52,6 +52,7 @@ impl GpuRaytracer {
             format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::TEXTURE_BINDING
                 | wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::COPY_SRC
                 | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         };
@@ -72,7 +73,8 @@ impl GpuRaytracer {
         Texture { 
             texture, 
             view, 
-            sampler
+            sampler,
+            size,
         }
     }
 
@@ -168,6 +170,10 @@ impl GpuRaytracer {
         })
     }
 
+    pub fn render_target(&self) -> &Texture {
+        &self.render_target
+    }
+
     pub fn resize(&mut self, device: &wgpu::Device, new_size: UVec2) {
         // Recreate render target
         self.render_target = Self::create_render_target(device, new_size);
@@ -194,9 +200,9 @@ impl GpuRaytracer {
         }
     }
 
-    pub fn render(&mut self, frame: &mut Frame) {
+    pub fn render(&mut self, cmd_encoder: &mut wgpu::CommandEncoder) {
         // Ray tracer in a compute pass
-        let mut compute_pass = frame.command_encoder.begin_compute_pass(
+        let mut compute_pass = cmd_encoder.begin_compute_pass(
             &wgpu::ComputePassDescriptor {
                 label: Some("compute pass"),
                 timestamp_writes: None,
@@ -206,7 +212,11 @@ impl GpuRaytracer {
         compute_pass.set_pipeline(&self.compute_pipeline.pipeline);
         compute_pass.set_bind_group(0, &self.compute_pipeline.image_bind_group, &[]);
         compute_pass.set_bind_group(1, &self.compute_pipeline.camera_bind_group, &[]);
-        compute_pass.dispatch_workgroups((frame.size.x + 7) / 8, (frame.size.y + 7) / 8, 1);
+        compute_pass.dispatch_workgroups(
+            (self.render_target.size.x + 7) / 8, 
+            (self.render_target.size.y + 7) / 8, 
+            1
+        );
 
         drop(compute_pass);
     }

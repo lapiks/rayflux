@@ -28,6 +28,7 @@ fn main() {
         }
         OutputMode::File => {
             let mut app = FileApp::default();
+            app.run();
         }
     }
     

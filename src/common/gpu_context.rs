@@ -1,16 +1,10 @@
 use glam::UVec2;
 
-pub struct Frame {
-    pub surface_texture: wgpu::SurfaceTexture,
-    pub surface_view: wgpu::TextureView,
-    pub size: UVec2,
-    pub command_encoder: wgpu::CommandEncoder,
-}
-
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
+    pub size: UVec2,
 }
 
 /// wgpu context
