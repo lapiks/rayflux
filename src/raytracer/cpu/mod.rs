@@ -4,6 +4,9 @@ pub mod canvas;
 pub mod ray;
 pub mod shapes;
 
+pub use canvas::*;
+pub use ray::*;
+
 #[derive(Default)]
 pub struct CpuRaytracer {
     
