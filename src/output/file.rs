@@ -16,16 +16,6 @@ pub struct FileApp {
 
 impl FileApp {
     pub fn run(&mut self) {
-        let mut renderdoc: Option<renderdoc::RenderDoc<renderdoc::V110>> = None;
-        if let Ok(rd) = renderdoc::RenderDoc::new() {
-            renderdoc = Some(rd);
-            println!("RenderDoc initialized.");
-        }
-
-        if let Some(rd) = &mut renderdoc {
-            rd.start_frame_capture(std::ptr::null(), std::ptr::null());
-        }
-
         let default_size = UVec2::new(1800, 900);
 
         // Prepare camera
@@ -65,10 +55,6 @@ impl FileApp {
         };
 
         println!("Rendering finished in {:.2?} seconds", now.elapsed());
-
-        if let Some(rd) = &mut renderdoc {
-            rd.end_frame_capture(std::ptr::null(), std::ptr::null());
-        }
     }
 }
 
