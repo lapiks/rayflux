@@ -7,8 +7,8 @@ You can choose to display the result in real-time in a window or save it as a PN
 
 - CPU raytracing
 - GPU raytracing using wgpu
-- Real-time rendering in a window
-- Image export as PNG
+- Real-time rendering of the result in a window
+- Result image export as PNG
 
 ## Usage
 
