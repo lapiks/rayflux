@@ -4,9 +4,16 @@ pub mod camera;
 pub mod inputs;
 pub mod time;
 pub mod color;
+pub mod object;
+pub mod shapes;
+pub mod transform;
+pub mod material;
 
 pub use gpu_context::*;
 pub use scene::*;
 pub use camera::*;
 pub use inputs::*;
 pub use time::*;
+pub use object::*;
+pub use transform::*;
+pub use material::*;

@@ -2,6 +2,7 @@ use crate::raytracer::{RaytracerImpl, RaytracerOutput};
 
 pub mod canvas;
 pub mod ray;
+pub mod shapes;
 
 #[derive(Default)]
 pub struct CpuRaytracer {
