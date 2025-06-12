@@ -2,7 +2,6 @@ use clap::ValueEnum;
 
 pub mod window;
 pub mod file;
-pub mod ui;
 
 /// The output mode for the ray tacer
 #[derive(ValueEnum, Clone, Debug)]

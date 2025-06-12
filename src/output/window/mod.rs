@@ -1,3 +1,5 @@
+pub mod ui;
+
 use std::sync::Arc;
 
 use egui_wgpu::ScreenDescriptor;
@@ -5,7 +7,9 @@ use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
 use crate::{
-    common::{GpuContext, Inputs, Scene, Texture, Time}, output::ui::UserInterface, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}
+    common::{GpuContext, Inputs, Scene, Texture, Time}, 
+    output::window::ui::UserInterface, 
+    raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}
 };
 
 pub struct AppContext<'a> {
