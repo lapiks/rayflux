@@ -1,4 +1,4 @@
-use crate::raytracer::RaytracerImpl;
+use crate::raytracer::{RaytracerImpl, RaytracerOutput};
 
 #[derive(Default)]
 pub struct CpuRaytracer {
@@ -6,11 +6,13 @@ pub struct CpuRaytracer {
 }
 
 impl RaytracerImpl for CpuRaytracer {
-    fn render(&self) {
-        todo!()
+    fn output(&self) -> RaytracerOutput {
+        RaytracerOutput::Image
     }
-    
-    fn output(&self) -> &crate::output::RaytracerOutput {
+}
+
+impl CpuRaytracer {
+    pub fn render(&self) {
         todo!()
     }
 }

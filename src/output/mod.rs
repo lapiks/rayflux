@@ -13,8 +13,3 @@ pub enum OutputMode {
     /// Rendering to an image file
     File,
 }
-
-pub enum RaytracerOutput<'a> {
-    WgpuTexture(&'a Texture),
-    Image,
-}

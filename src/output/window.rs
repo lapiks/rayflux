@@ -4,7 +4,7 @@ use egui_wgpu::ScreenDescriptor;
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{common::{Frame, GpuContext, Inputs, Scene, Texture, Time}, features::UserInterface, output::RaytracerOutput, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerType}};
+use crate::{common::{Frame, GpuContext, Inputs, Scene, Texture, Time}, features::UserInterface, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}};
 
 pub struct AppContext<'a> {
     pub time: &'a Time,
@@ -46,12 +46,21 @@ impl WindowApp {
 
     /// Rendering phase
     fn render_phase(&mut self) {
+        let raytracer = self.raytracer.as_mut().unwrap();
         let context = self.context.as_mut().unwrap();
         let renderer = self.renderer.as_mut().unwrap();
         let gui_renderer = self.gui_renderer.as_mut().unwrap();
 
         match renderer.begin_frame(context) {
             Ok(mut frame) => {
+                match raytracer {
+                    Raytracer::Cpu(cpu_raytracer) => cpu_raytracer.render(),
+                    Raytracer::Gpu(gpu_raytracer) => {
+                        gpu_raytracer.pre_render(context, &mut self.scene);
+                        gpu_raytracer.render(&mut frame)
+                    },
+                }
+
                 renderer.render(&mut frame);
 
                 let app_ctx = AppContext {

@@ -1,13 +1,10 @@
 use clap::ValueEnum;
 use glam::UVec2;
 
-use crate::{output::RaytracerOutput, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer}};
+use crate::{common::Texture, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer}};
 
 pub mod cpu;
 pub mod gpu;
-
-pub use cpu::*;
-pub use gpu::*;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum RaytracerType {
@@ -27,24 +24,21 @@ pub enum Raytracer {
 }
 
 pub trait RaytracerImpl {
-    fn render(&self);
-    fn output(&self) -> &RaytracerOutput;
+    fn output(&self) -> RaytracerOutput;
 }
 
-impl RaytracerImpl for Raytracer {
-    fn render(&self) {
-        match self {
-            Raytracer::Cpu(cpu) => cpu.render(),
-            Raytracer::Gpu(gpu) => gpu.render(),
-        }
-    }
-    
-    fn output(&self) -> &RaytracerOutput {
+impl RaytracerImpl for Raytracer {    
+    fn output(&self) -> RaytracerOutput {
         match self {
             Raytracer::Cpu(cpu) => cpu.output(),
             Raytracer::Gpu(gpu) => gpu.output(),
         }
     }
+}
+
+pub enum RaytracerOutput<'a> {
+    WgpuTexture(&'a Texture),
+    Image,
 }
 
 pub struct RenderParams {
