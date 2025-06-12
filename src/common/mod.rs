@@ -3,6 +3,7 @@ pub mod scene;
 pub mod camera;
 pub mod inputs;
 pub mod time;
+pub mod color;
 
 pub use gpu_context::*;
 pub use scene::*;
