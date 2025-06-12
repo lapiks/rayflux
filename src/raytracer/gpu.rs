@@ -1,7 +1,7 @@
 use glam::{Mat4, UVec2, Vec3};
 use wgpu::util::DeviceExt;
 
-use crate::{engine::{Camera, Frame, GpuContext, Scene, Texture}, raytracer::RaytracerImpl};
+use crate::{common::{Camera, Frame, GpuContext, Scene, Texture}, raytracer::RaytracerImpl};
 
 struct ComputePipeline {
     pub pipeline: wgpu::ComputePipeline,

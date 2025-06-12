@@ -1,4 +1,4 @@
-use crate::engine::{Camera, GpuContext};
+use crate::common::{Camera, GpuContext};
 
 #[derive(Default)]
 pub struct Scene {

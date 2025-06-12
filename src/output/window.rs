@@ -4,7 +4,7 @@ use egui_wgpu::ScreenDescriptor;
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{engine::{Frame, GpuContext, Inputs, Scene, Texture, Time}, features::UserInterface, output::RaytracerOutput, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerType}};
+use crate::{common::{Frame, GpuContext, Inputs, Scene, Texture, Time}, features::UserInterface, output::RaytracerOutput, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerType}};
 
 pub struct AppContext<'a> {
     pub time: &'a Time,

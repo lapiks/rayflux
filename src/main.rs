@@ -5,7 +5,7 @@ use crate::{output::{file::FileApp, window::WindowApp, OutputMode}, raytracer::R
 
 mod raytracer;
 mod output;
-mod engine;
+mod common;
 mod features;
 
 #[derive(Parser)]
