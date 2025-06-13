@@ -1,3 +1,5 @@
+use glam::DVec3;
+
 use crate::{common::{shapes::Cube, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
 
 impl Hittable for Cube {
@@ -41,6 +43,10 @@ impl Hittable for Cube {
                 ]
             )
         }
+    }
+    
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
+        todo!()
     }
 }
 

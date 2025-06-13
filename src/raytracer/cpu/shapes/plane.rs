@@ -1,5 +1,7 @@
 use std::f64::EPSILON;
 
+use glam::DVec3;
+
 use crate::{common::{shapes::Plane, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
 
 impl Hittable for Plane {
@@ -15,6 +17,10 @@ impl Hittable for Plane {
         }
 
         xs
+    }
+    
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
+        todo!()
     }
 }
 

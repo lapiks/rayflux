@@ -1,3 +1,5 @@
+use glam::DVec3;
+
 use crate::{common::{shapes::Sphere, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
 
 
@@ -29,6 +31,11 @@ impl Hittable for Sphere {
                 )
             ]
         )
+    }
+    
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
+        // for a unit sphere at 0,0,0
+        point.normalize()
     }
 }
 

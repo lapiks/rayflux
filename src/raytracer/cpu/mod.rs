@@ -84,9 +84,14 @@ impl CpuRaytracer {
         match intersections.hit_index(StandardHit {}) {
             Some(index) => {
                 let infos = IntersectionInfos::new(&intersections, index, &ray);
-                Some(Color::RED)
+                Some(Self::shade_hit(&infos))
             },
             None => None
         }
+    }
+
+    fn shade_hit(infos: &IntersectionInfos) -> Color {
+        let normal = infos.normal;
+        Color::new(normal.x, normal.y, normal.z)
     }
 }

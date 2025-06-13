@@ -1,3 +1,5 @@
+use glam::DVec3;
+
 use crate::{common::{shapes::Cylinder, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
 
 impl Hittable for Cylinder {
@@ -71,5 +73,9 @@ impl Hittable for Cylinder {
 
         intersections.append(intersect_caps(self, ray, object));
         intersections
+    }
+    
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
+        todo!()
     }
 }
