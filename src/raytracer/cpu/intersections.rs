@@ -159,12 +159,31 @@ mod tests {
         assert_eq!(i.object, &o);
     }
 
-        #[test]
+    #[test]
+    fn intersections_is_empty_by_default() {
+        let xs = Intersections::new();
+        assert_eq!(xs.count(), 0);
+    }
+
+    #[test]
     fn aggregating_intersections() {
         let o = Object::new_sphere();
         let i1 = Intersection::new(1.0, &o);
         let i2 = Intersection::new(2.0, &o);
         let xs = Intersections::new().with_intersections(vec![i1.clone(), i2.clone()]);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs.get(0), Some(&i1));
+        assert_eq!(xs.get(1), Some(&i2));
+    }
+    
+    #[test]
+    fn aggregating_intersections_with_pushes() {
+        let o = Object::new_sphere();
+        let i1 = Intersection::new(1.0, &o);
+        let i2 = Intersection::new(2.0, &o);
+        let mut xs = Intersections::new();
+        xs.push(i1.clone());
+        xs.push(i2.clone());
         assert_eq!(xs.count(), 2);
         assert_eq!(xs.get(0), Some(&i1));
         assert_eq!(xs.get(1), Some(&i2));
