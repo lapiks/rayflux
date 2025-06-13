@@ -1,8 +1,9 @@
-use crate::common::{Camera, GpuContext};
+use crate::common::{Camera, GpuContext, Object};
 
 #[derive(Default)]
 pub struct Scene {
     camera: Camera,
+    objects: Vec<Object>,
 }
 
 impl Scene {
@@ -20,5 +21,13 @@ impl Scene {
 
     pub fn update(&mut self, context: &GpuContext) {
 
+    }
+
+    pub fn objects(&self) -> &Vec<Object> {
+        &self.objects
+    }
+
+    pub fn objects_mut(&mut self) -> &mut Vec<Object> {
+        &mut self.objects
     }
 }

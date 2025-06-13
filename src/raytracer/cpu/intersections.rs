@@ -1,10 +1,19 @@
 use std::cmp::Ordering;
 
-use crate::{common::Object, raytracer::cpu::{shapes::Hittable, Ray}};
+use crate::{common::{Object, Scene}, raytracer::cpu::{shapes::Hittable, Ray}};
 
 /// Intersect an object with a ray and return the resulting intersections
-pub fn intersect<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> {
+pub fn intersect_object<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> {
     object.shape().intersect(ray, object)
+}
+
+/// Intersect all the object of a scene with a ray and return the resulting intersections
+pub fn intersect_scene<'a>(ray: &Ray, scene: &'a Scene) -> Intersections<'a> {
+    let mut intersections = Intersections::new();
+    for object in scene.objects().iter() {
+       intersections.append(object.shape().intersect(ray, object));
+    }
+    intersections.sort()
 }
 
 

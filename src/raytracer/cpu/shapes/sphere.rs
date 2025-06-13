@@ -42,7 +42,7 @@ impl Sphere {
 #[cfg(test)]
 mod tests {
     use glam::DVec3;
-    use crate::raytracer::cpu::intersections::intersect;
+    use crate::raytracer::cpu::intersections::intersect_object;
     use super::*;
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
             DVec3::new(0.0, 0.0, 1.0)
         );
         let s = Object::new_sphere();
-        let xs = intersect(&r, &s);
+        let xs = intersect_object(&r, &s);
         assert_eq!(xs.count(), 2);
         assert_eq!(xs[0].t(), 4.0);
         assert_eq!(xs[1].t(), 6.0);
@@ -65,7 +65,7 @@ mod tests {
             DVec3::new(0.0, 0.0, 1.0)
         );
         let s = Object::new_sphere();
-        let xs = intersect(&r, &s);
+        let xs = intersect_object(&r, &s);
         assert_eq!(xs.count(), 2);
         assert_eq!(xs[0].t(), 5.0);
         assert_eq!(xs[1].t(), 5.0);
@@ -78,7 +78,7 @@ mod tests {
             DVec3::new(0.0, 0.0, 1.0)
         );
         let s = Object::new_sphere();
-        let xs = intersect(&r, &s);
+        let xs = intersect_object(&r, &s);
         assert_eq!(xs.count(), 0);
     }
     
@@ -89,7 +89,7 @@ mod tests {
             DVec3::new(0.0, 0.0, 1.0)
         );
         let s = Object::new_sphere();
-        let xs = intersect(&r, &s);
+        let xs = intersect_object(&r, &s);
         assert_eq!(xs.count(), 2);
         assert_eq!(xs[0].t(), -1.0);
         assert_eq!(xs[1].t(), 1.0);
@@ -102,7 +102,7 @@ mod tests {
             DVec3::new(0.0, 0.0, 1.0)
         );
         let s = Object::new_sphere();
-        let xs = intersect(&r, &s);
+        let xs = intersect_object(&r, &s);
         assert_eq!(xs.count(), 2);
         assert_eq!(xs[0].t(), -6.0);
         assert_eq!(xs[1].t(), -4.0);
