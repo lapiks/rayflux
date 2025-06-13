@@ -1,9 +1,34 @@
-use crate::{common::shapes::Sphere, raytracer::cpu::{shapes::Hittable, Ray}};
+use crate::{common::{shapes::Sphere, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
 
 
 impl Hittable for Sphere {
-    fn intersect(&self, ray: &Ray) {
-        
+    fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a> {
+        let sphere_to_ray = ray.origin;
+        let a = ray.direction.dot(ray.direction);
+        let b = 2.0 * ray.direction.dot(sphere_to_ray);
+        // -1.0 for radius*radius with radius = 1
+        let c = sphere_to_ray.dot(sphere_to_ray) - 1.0;
+        let discriminant = b*b - 4.0 * a * c;
+        if discriminant < 0.0 {
+            return Intersections::new()
+        } 
+
+        let sqrt_disc = discriminant.sqrt();
+        let inv_denom = 1.0 / (2.0 * a);
+
+        Intersections::new()
+        .with_intersections(
+            vec![
+                Intersection::new(
+                    (-b - sqrt_disc) * inv_denom, 
+                    object
+                ),
+                Intersection::new(
+                    (-b + sqrt_disc) * inv_denom, 
+                    object
+                )
+            ]
+        )
     }
 }
 

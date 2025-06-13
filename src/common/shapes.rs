@@ -22,5 +22,13 @@ pub struct Cube {
 
 #[derive(Default)]
 pub struct Cylinder {
+    pub min: f64,
+    pub max: f64,
+    pub closed: bool,
+}
 
+impl Cylinder {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

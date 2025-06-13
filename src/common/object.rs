@@ -1,6 +1,6 @@
 use crate::common::{Material, Transform};
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub struct Object {
     transform: Transform,
     material: Material,

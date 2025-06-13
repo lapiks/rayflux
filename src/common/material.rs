@@ -1,4 +1,4 @@
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub struct Material {
 
 }

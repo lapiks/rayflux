@@ -3,6 +3,7 @@ use crate::raytracer::{RaytracerImpl, RaytracerOutput};
 pub mod canvas;
 pub mod ray;
 pub mod shapes;
+pub mod intersections;
 
 pub use canvas::*;
 pub use ray::*;
