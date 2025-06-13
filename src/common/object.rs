@@ -47,4 +47,16 @@ impl Object {
             material: Material::default(),
         }
     }
+
+    pub fn shape(&self) -> &Shape {
+        &self.shape
+    }
+
+    pub fn transform(&self) -> &Transform {
+        &self.transform
+    }
+
+    pub fn material(&self) -> &Material {
+        &self.material
+    }
 }

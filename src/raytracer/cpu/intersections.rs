@@ -1,6 +1,12 @@
 use std::cmp::Ordering;
 
-use crate::common::Object;
+use crate::{common::Object, raytracer::cpu::{shapes::Hittable, Ray}};
+
+/// Intersect an object with a ray and return the resulting intersections
+pub fn intersect<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> {
+    object.shape().intersect(ray, object)
+}
+
 
 pub trait HitPredicate {
     fn hit_predicate(&self) -> Box<dyn FnMut(&&Intersection<'_>) -> bool>;

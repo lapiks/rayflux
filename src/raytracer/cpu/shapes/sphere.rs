@@ -41,76 +41,72 @@ impl Sphere {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
-
     use glam::DVec3;
-
+    use crate::raytracer::cpu::intersections::intersect;
     use super::*;
 
-    const EPSILON: f64 = 0.00001;
+    #[test]
+    fn a_ray_intersects_a_sphere_at_two_points() {
+        let r = Ray::new(
+            DVec3::new(0.0, 0.0, -5.0), 
+            DVec3::new(0.0, 0.0, 1.0)
+        );
+        let s = Object::new_sphere();
+        let xs = intersect(&r, &s);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs[0].t(), 4.0);
+        assert_eq!(xs[1].t(), 6.0);
+    }
 
-    // #[test]
-    // fn a_ray_intersects_a_sphere_at_two_points() {
-    //     let r = Ray::new(
-    //         DVec3::new(0.0, 0.0, -5.0), 
-    //         DVec3::new(0.0, 0.0, 1.0)
-    //     );
-    //     let s = Object::new(Shape::Sphere(Sphere::default()));
-    //     let xs = s.intersect(&r);
-    //     assert_eq!(xs.count(), 2);
-    //     assert_eq!(xs[0].t(), 4.0);
-    //     assert_eq!(xs[1].t(), 6.0);
-    // }
+    #[test]
+    fn a_ray_intersects_a_sphere_at_a_tangent() {
+        let r = Ray::new(
+            DVec3::new(0.0, 1.0, -5.0), 
+            DVec3::new(0.0, 0.0, 1.0)
+        );
+        let s = Object::new_sphere();
+        let xs = intersect(&r, &s);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs[0].t(), 5.0);
+        assert_eq!(xs[1].t(), 5.0);
+    }
 
-    // #[test]
-    // fn a_ray_intersects_a_sphere_at_a_tangent() {
-    //     let r = Ray::new(
-    //         DVec3::new(0.0, 1.0, -5.0), 
-    //         DVec3::new(0.0, 0.0, 1.0)
-    //     );
-    //     let s = Object::new(Shape::Sphere(Sphere::default()));
-    //     let xs = s.intersect(&r);
-    //     assert_eq!(xs.count(), 2);
-    //     assert_eq!(xs[0].t(), 5.0);
-    //     assert_eq!(xs[1].t(), 5.0);
-    // }
-
-    // #[test]
-    // fn a_ray_misses_a_sphere() {
-    //     let r = Ray::new(
-    //         DVec3::new(0.0, 2.0, -5.0), 
-    //         DVec3::new(0.0, 0.0, 1.0)
-    //     );
-    //     let s = Object::new(Shape::Sphere(Sphere::default()));
-    //     let xs = s.intersect(&r);
-    //     assert_eq!(xs.count(), 0);
-    // }
+    #[test]
+    fn a_ray_misses_a_sphere() {
+        let r = Ray::new(
+            DVec3::new(0.0, 2.0, -5.0), 
+            DVec3::new(0.0, 0.0, 1.0)
+        );
+        let s = Object::new_sphere();
+        let xs = intersect(&r, &s);
+        assert_eq!(xs.count(), 0);
+    }
     
-    // #[test]
-    // fn a_ray_originates_inside_a_sphere() {
-    //     let r = Ray::new(
-    //         DVec3::new(0.0, 0.0, 0.0), 
-    //         DVec3::new(0.0, 0.0, 1.0)
-    //     );
-    //     let s = Object::new(Shape::Sphere(Sphere::default()));
-    //     let xs = s.intersect(&r);
-    //     assert_eq!(xs.count(), 2);
-    //     assert_eq!(xs[0].t(), -1.0);
-    //     assert_eq!(xs[1].t(), 1.0);
-    // }
+    #[test]
+    fn a_ray_originates_inside_a_sphere() {
+        let r = Ray::new(
+            DVec3::new(0.0, 0.0, 0.0), 
+            DVec3::new(0.0, 0.0, 1.0)
+        );
+        let s = Object::new_sphere();
+        let xs = intersect(&r, &s);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs[0].t(), -1.0);
+        assert_eq!(xs[1].t(), 1.0);
+    }
 
-    // #[test]
-    // fn a_sphere_is_behind_a_ray() {
-    //     let r = Ray::new(
-    //         DVec3::new(0.0, 0.0, 5.0), 
-    //         DVec3::new(0.0, 0.0, 1.0)
-    //     );
-    //     let s = Object::new(Shape::Sphere(Sphere::default()));
-    //     let xs = s.intersect(&r);
-    //     assert_eq!(xs.count(), 2);
-    //     assert_eq!(xs[0].t(), -6.0);
-    //     assert_eq!(xs[1].t(), -4.0);
-    // }
+    #[test]
+    fn a_sphere_is_behind_a_ray() {
+        let r = Ray::new(
+            DVec3::new(0.0, 0.0, 5.0), 
+            DVec3::new(0.0, 0.0, 1.0)
+        );
+        let s = Object::new_sphere();
+        let xs = intersect(&r, &s);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs[0].t(), -6.0);
+        assert_eq!(xs[1].t(), -4.0);
+    }
 
     // #[test]
     // fn intersecting_a_scaled_sphere_with_a_ray() {
