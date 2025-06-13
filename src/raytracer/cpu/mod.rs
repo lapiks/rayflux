@@ -6,7 +6,7 @@ pub mod shapes;
 pub mod intersections;
 
 pub use canvas::*;
-use glam::{DVec3, UVec2};
+use glam::UVec2;
 pub use ray::*;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 

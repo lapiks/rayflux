@@ -51,8 +51,3 @@ pub enum RaytracerOutput<'a> {
     WgpuTexture(&'a Texture),
     Image,
 }
-
-pub struct RenderParams {
-    /// Rendering size
-    size: UVec2,
-}
