@@ -63,18 +63,15 @@ impl CpuRaytracer {
         let fov = camera.field_of_view();
         let aspect = camera.aspect_ratio();
 
-        // Dimensions du plan image à z = -1 (plan de projection)
         let half_height = (fov / 2.0).tan();
         let half_width = aspect * half_height;
 
         let pixel_width = (half_width * 2.0) / image_size.x as f32;
         let pixel_height = (half_height * 2.0) / image_size.y as f32;
 
-        // Coordonnées en espace NDC [-1, 1]
         let x_ndc = (x + 0.5) * pixel_width - half_width;
         let y_ndc = half_height - (y + 0.5) * pixel_height;
 
-        // Direction du rayon dans l'espace monde
         let direction =
             (forward + right * x_ndc + up * y_ndc).normalize();
 
