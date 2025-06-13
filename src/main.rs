@@ -9,9 +9,9 @@ mod output;
 
 #[derive(Parser)]
 struct Args {
-    #[arg(long, default_value = "gpu", value_enum)]
+    #[arg(long, default_value = "cpu", value_enum)]
     raytracer: RaytracerType,
-    #[arg(long, default_value = "window", value_enum)]
+    #[arg(long, default_value = "file", value_enum)]
     output: OutputMode,
 }
 
@@ -26,7 +26,7 @@ fn main() {
             let _ = event_loop.run_app(&mut app);
         }
         OutputMode::File => {
-            let mut app = FileApp::default();
+            let mut app = FileApp::new(args.raytracer);
             app.run();
         }
     }

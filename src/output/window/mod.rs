@@ -62,7 +62,7 @@ impl WindowApp {
             Ok(mut frame) => {
                 // Execute raytracer
                 match raytracer {
-                    Raytracer::Cpu(cpu_raytracer) => cpu_raytracer.render(),
+                    Raytracer::Cpu(cpu_raytracer) => cpu_raytracer.render(&self.scene),
                     Raytracer::Gpu(gpu_raytracer) => {
                         gpu_raytracer.pre_render(context, &mut self.scene);
                         gpu_raytracer.render(&mut frame.command_encoder);
@@ -164,7 +164,7 @@ impl ApplicationHandler for WindowApp {
 
         // Create Raytracer
         let raytracer = match self.raytracer_type {
-            RaytracerType::Cpu => Raytracer::Cpu(CpuRaytracer::default()),
+            RaytracerType::Cpu => Raytracer::Cpu(CpuRaytracer::new(default_size)),
             RaytracerType::Gpu => Raytracer::Gpu(GpuRaytracer::new(&context, &self.scene, default_size)),
         };
 

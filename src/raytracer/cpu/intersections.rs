@@ -1,5 +1,7 @@
 use std::cmp::Ordering;
 
+use glam::DVec3;
+
 use crate::{common::{Object, Scene}, raytracer::cpu::{shapes::Hittable, Ray}};
 
 /// Intersect an object with a ray and return the resulting intersections
@@ -158,6 +160,28 @@ impl<'a> std::ops::Index<usize> for Intersections<'a> {
     // row major
     fn index(&self, index: usize) -> &Intersection<'a> {
         &self.intersections[index]
+    }
+}
+
+/// All the informations about an intersection
+pub struct IntersectionInfos<'a> {
+    pub t: f64,
+    pub object: &'a Object,
+    pub point: DVec3,
+}
+
+impl<'a> IntersectionInfos<'a> {
+    pub fn new(intersections: &'a Intersections<'a>, intersection_index: usize, ray: &Ray) -> Self {
+        let intersection = intersections.get(intersection_index).unwrap();
+        let t = intersection.t;
+        let point = ray.at(t);
+        let object = intersection.object;
+
+        Self {
+            t,
+            object,
+            point,
+        }
     }
 }
 

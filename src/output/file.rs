@@ -4,40 +4,50 @@ use glam::UVec2;
 use image::{ImageBuffer, Rgba};
 
 use crate::{
-    common::{GpuContext, Scene, Texture}, 
+    common::{GpuContext, Object, Scene, Texture}, 
     raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, RaytracerType}
 };
 
-#[derive(Default)]
 pub struct FileApp {
     raytracer_type: RaytracerType,
-    scene: Scene,
 }
 
 impl FileApp {
+    pub fn new(raytracer_type: RaytracerType) -> Self {
+        Self { raytracer_type }
+    }
+
     pub fn run(&mut self) {
         let default_size = UVec2::new(1800, 900);
 
+        // Create a scene
+        let mut scene = Scene::default();
+        scene.add_object(Object::new_sphere());
+
         // Prepare camera
-        let camera = self.scene.camera_mut();
+        let camera = scene.camera_mut();
         camera.update_aspect_ratio(default_size);
 
         let now = Instant::now();
-        println!("Start rendering");
 
+        println!("Start {} rendering", self.raytracer_type);
+        
         match self.raytracer_type {
             RaytracerType::Cpu => {
                 // Create raytracer
-                let raytracer = CpuRaytracer::default();
+                let mut raytracer = CpuRaytracer::new(default_size);
                 // Execute raytracer
-                raytracer.render();
+                raytracer.render(&scene);
+                // save result as image
+                let canvas = raytracer.canvas();
+                let _ = canvas.export("output/cpu/test.png");
             },
             RaytracerType::Gpu => {
                 // Create gpu context
                 let context = pollster::block_on(GpuContext::new());
 
                 // Create raytracer
-                let mut raytracer = GpuRaytracer::new(&context, &self.scene, default_size);
+                let mut raytracer = GpuRaytracer::new(&context, &scene, default_size);
 
                 // Create a command encoder
                 let mut command_encoder = context.device().create_command_encoder(&Default::default());
@@ -50,7 +60,7 @@ impl FileApp {
 
                 // save result as image
                 let output = raytracer.render_target();
-                pollster::block_on(save_texture_as_png(&context, output, "output/test.png"));
+                pollster::block_on(save_texture_as_png(&context, output, "output/gpu/test.png"));
             } 
         };
 

@@ -1,3 +1,5 @@
+use core::fmt;
+
 use clap::ValueEnum;
 use glam::UVec2;
 
@@ -15,6 +17,15 @@ pub enum RaytracerType {
 impl Default for RaytracerType {
     fn default() -> Self {
         Self::Gpu
+    }
+}
+
+impl fmt::Display for RaytracerType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RaytracerType::Cpu => write!(f, "CPU"),
+            RaytracerType::Gpu => write!(f, "GPU"),
+        }
     }
 }
 

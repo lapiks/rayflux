@@ -1,5 +1,7 @@
 use glam::{UVec2, Vec3};
 
+use crate::common::color::Color;
+
 const DEFAULT_POSITION: Vec3 = Vec3::new(2.5, 2.5, 2.5);
 
 pub struct Camera {
@@ -10,6 +12,7 @@ pub struct Camera {
     aspect_ratio: f32,
     near: f32,
     far: f32,
+    background: Color,
     dirty: bool,
 }
 
@@ -23,6 +26,7 @@ impl Default for Camera {
             aspect_ratio: 1.0,
             near: 0.1,
             far: 100.0,
+            background: Color::BLACK,
             dirty: false,
         }
     }
@@ -90,6 +94,10 @@ impl Camera {
 
     pub fn far(&self) -> f32 {
         self.far
+    }
+
+    pub fn background(&self) -> Color {
+        self.background
     }
 
     pub fn is_dirty(&self) -> bool {

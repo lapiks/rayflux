@@ -7,6 +7,10 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn add_object(&mut self, object: Object) {
+        self.objects.push(object);
+    }
+
     pub fn camera(&self) -> &Camera {
         &self.camera
     }

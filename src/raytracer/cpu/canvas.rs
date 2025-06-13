@@ -48,8 +48,8 @@ impl Canvas {
         img.save(path)
     }
 
-    pub fn size(&self) -> &UVec2 {
-        &self.size
+    pub fn size(&self) -> UVec2 {
+        self.size
     }
 
     pub fn pixels_mut(&mut self) -> &mut Vec<Color> {
@@ -64,7 +64,7 @@ impl std::ops::Index<usize> for Canvas {
     fn index(&self, row: usize) -> &[Color] {
         let start = row * self.size.x as usize;
 
-        &self.pixels[start..start + self.size.y as usize]
+        &self.pixels[start..start + self.size.x as usize]
     }
 }
 
