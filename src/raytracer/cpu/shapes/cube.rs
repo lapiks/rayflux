@@ -46,7 +46,14 @@ impl Hittable for Cube {
     }
     
     fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
-        todo!()
+        let maxc = f64::max(point.x.abs(), f64::max(point.y.abs(), point.z.abs()));
+        if maxc == point.x.abs() { 
+            DVec3::new(point.x, 0.0, 0.0)
+        } else if maxc == point.y.abs() {
+            DVec3::new(0.0, point.y, 0.0)
+        } else {
+            DVec3::new(0.0, 0.0, point.z)
+        }
     }
 }
 

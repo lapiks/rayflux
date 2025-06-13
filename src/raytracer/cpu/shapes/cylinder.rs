@@ -1,3 +1,5 @@
+use std::f64::EPSILON;
+
 use glam::DVec3;
 
 use crate::{common::{shapes::Cylinder, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
@@ -76,6 +78,13 @@ impl Hittable for Cylinder {
     }
     
     fn normal_at<'a>(&self, point: DVec3) -> DVec3 {
-        todo!()
+        let dist = point.x * point.x + point.z * point.z;
+        if dist < 1.0 && point.y >= self.max - EPSILON {
+            DVec3::new(0.0, 1.0, 0.0)
+        } else if dist < 1.0 && point.y <= self.min + EPSILON {
+            DVec3::new(0.0, -1.0, 0.0)
+        } else {
+            DVec3::new(point.x, 0.0, point.z)
+        }
     }
 }
