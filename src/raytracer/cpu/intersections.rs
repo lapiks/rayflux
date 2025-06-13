@@ -13,7 +13,7 @@ pub fn intersect_object<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> 
 pub fn intersect_scene<'a>(ray: &Ray, scene: &'a Scene) -> Intersections<'a> {
     let mut intersections = Intersections::new();
     for object in scene.objects().iter() {
-       intersections.append(object.shape().intersect(ray, object));
+       intersections.append(intersect_object(ray, object));
     }
     intersections.sort()
 }
