@@ -32,7 +32,7 @@ impl HitPredicate for ShadowHit {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intersection<'a> {
     t: f64,
     object: &'a Object,
@@ -143,5 +143,30 @@ impl<'a> std::ops::Index<usize> for Intersections<'a> {
     // row major
     fn index(&self, index: usize) -> &Intersection<'a> {
         &self.intersections[index]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // An intersection encapsulate t and object
+    #[test]
+    fn new_intersection() {
+        let o = Object::new_sphere();
+        let i = Intersection::new(3.5, &o);
+        assert_eq!(i.t, 3.5);
+        assert_eq!(i.object, &o);
+    }
+
+        #[test]
+    fn aggregating_intersections() {
+        let o = Object::new_sphere();
+        let i1 = Intersection::new(1.0, &o);
+        let i2 = Intersection::new(2.0, &o);
+        let xs = Intersections::new().with_intersections(vec![i1.clone(), i2.clone()]);
+        assert_eq!(xs.count(), 2);
+        assert_eq!(xs.get(0), Some(&i1));
+        assert_eq!(xs.get(1), Some(&i2));
     }
 }

@@ -1,4 +1,4 @@
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Transform {
 
 }

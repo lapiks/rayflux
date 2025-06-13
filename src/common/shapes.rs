@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq)]
 pub enum Shape {
     Sphere(Sphere),
     Plane(Plane),
@@ -5,22 +6,16 @@ pub enum Shape {
     Cylinder(Cylinder),
 }
 
-#[derive(Default)]
-pub struct Sphere {
-    
-}
+#[derive(Debug, Default, PartialEq)]
+pub struct Sphere {}
 
-#[derive(Default)]
-pub struct Plane {
+#[derive(Debug, Default, PartialEq)]
+pub struct Plane {}
 
-}
+#[derive(Debug, Default, PartialEq)]
+pub struct Cube {}
 
-#[derive(Default)]
-pub struct Cube {
-    
-}
-
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Cylinder {
     pub min: f64,
     pub max: f64,
