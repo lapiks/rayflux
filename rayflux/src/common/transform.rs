@@ -28,6 +28,10 @@ impl Transform {
         dirty: false,
     };
 
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn from_translation(translation: DVec3) -> Self {
         Self {
             translation,
@@ -60,6 +64,24 @@ impl Transform {
 
     pub fn with_rotation(mut self, rotation: DQuat) -> Self {
         self.rotation = rotation;
+        self.dirty = true;
+        self
+    }
+
+    pub fn with_rotation_x(mut self, angle: f64) -> Self {
+        self.rotation = DQuat::from_axis_angle(DVec3::X, angle);
+        self.dirty = true;
+        self
+    }
+
+    pub fn with_rotation_y(mut self, angle: f64) -> Self {
+        self.rotation = DQuat::from_axis_angle(DVec3::Y, angle);
+        self.dirty = true;
+        self
+    }
+
+    pub fn with_rotation_z(mut self, angle: f64) -> Self {
+        self.rotation = DQuat::from_axis_angle(DVec3::Z, angle);
         self.dirty = true;
         self
     }

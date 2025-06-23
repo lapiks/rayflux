@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'rayflux'",
+            "name": "Debug executable 'rayflux_file'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=rayflux",
-                    "--package=rayflux"
+                    "--bin=rayflux_file",
+                    "--package=rayflux_file"
                 ],
                 "filter": {
-                    "name": "rayflux",
+                    "name": "rayflux_file",
                     "kind": "bin"
                 }
             },

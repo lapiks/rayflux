@@ -2,23 +2,40 @@ use std::cmp::Ordering;
 
 use glam::DVec3;
 
-use crate::{common::{Object, Scene}, raytracer::cpu::{shapes::Hittable, Ray}};
+use crate::{common::{Object, Scene}, raytracer::cpu::Ray};
 
-/// Intersect an object with a ray and return the resulting intersections
-pub fn intersect_object<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> {
-    let local_ray = ray.transform(&object.transform().inverse_matrix());
-    object.shape().intersect(&local_ray, object)
+pub trait Hittable {
+    /// Intersect an object with a ray and return the resulting intersections
+    fn intersect<'a>(&'a self, ray: &Ray) -> Intersections<'a>; 
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3; 
 }
 
-/// Intersect all the object of a scene with a ray and return the resulting intersections
+pub trait HittableShape {
+    fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a>; 
+    fn normal_at<'a>(&self, point: DVec3) -> DVec3; 
+}
+
+impl Hittable for Object {
+    fn intersect<'a>(&'a self, ray: &Ray) -> Intersections<'a> {
+        let local_ray = ray.transform(&self.transform().inverse_matrix());
+        self.shape().intersect(&local_ray, self)
+    }
+
+    fn normal_at<'a>(&self, point: glam::DVec3) -> DVec3 {
+        let transform = self.transform();
+        let local_point = transform.inverse_matrix().transform_point3(point);
+        let local_normal = self.shape().normal_at(local_point);
+        transform.inverse_transpose_matrix().transform_vector3(local_normal).normalize()
+    }
+}
+
 pub fn intersect_scene<'a>(ray: &Ray, scene: &'a Scene) -> Intersections<'a> {
     let mut intersections = Intersections::new();
     for object in scene.objects().iter() {
-       intersections.append(intersect_object(ray, object));
+       intersections.append(object.intersect(ray));
     }
     intersections.sort()
 }
-
 
 pub trait HitPredicate {
     fn hit_predicate(&self) -> Box<dyn FnMut(&&Intersection<'_>) -> bool>;
@@ -179,20 +196,18 @@ impl<'a> IntersectionInfos<'a> {
         let point = ray.at(t);
         let eyev = -ray.direction;
         let object = intersection.object;
-        let local_point = object.transform().inverse_matrix().transform_point3(point);
-        let local_normal = object.shape().normal_at(local_point);
-        let mut world_normal = object.transform().inverse_transpose_matrix().transform_vector3(local_normal).normalize();
+        let mut normal = object.normal_at(point);
         let mut inside = false;
-        if world_normal.dot(eyev) < 0.0 {
+        if normal.dot(eyev) < 0.0 {
             inside = true;
-            world_normal = -world_normal;
+            normal = -normal;
         }
 
         Self {
             t,
             object,
             point,
-            normal: world_normal,
+            normal,
         }
     }
 }

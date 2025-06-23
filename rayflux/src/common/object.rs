@@ -1,4 +1,6 @@
-use crate::common::{shapes::{Cube, Cylinder, Plane, Shape, Sphere}, Material, Transform};
+use crate::{
+    common::{shapes::{Cube, Cylinder, Plane, Shape, Sphere}, Material, Transform}
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Object {
@@ -50,6 +52,7 @@ impl Object {
 
     pub fn with_transform(mut self, transform: Transform) -> Self {
         self.transform = transform;
+        self.transform.update_matrix();
         self
     }
 

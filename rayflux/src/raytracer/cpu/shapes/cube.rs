@@ -1,8 +1,8 @@
 use glam::DVec3;
 
-use crate::{common::{shapes::Cube, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
+use crate::{common::{shapes::Cube, Object}, raytracer::cpu::{intersections::{HittableShape, Intersection, Intersections}, Ray}};
 
-impl Hittable for Cube {
+impl HittableShape for Cube {
     fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a> {
         fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
             let tmin_numerator = -1.0 - origin;

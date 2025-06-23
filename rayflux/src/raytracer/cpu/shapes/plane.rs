@@ -2,9 +2,9 @@ use std::f64::EPSILON;
 
 use glam::DVec3;
 
-use crate::{common::{shapes::Plane, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
+use crate::{common::{shapes::Plane, Object}, raytracer::cpu::{intersections::{HittableShape, Intersection, Intersections}, Ray}};
 
-impl Hittable for Plane {
+impl HittableShape for Plane {
     fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a> {
         let mut xs = Intersections::new();
         if ray.direction.y.abs() > EPSILON {

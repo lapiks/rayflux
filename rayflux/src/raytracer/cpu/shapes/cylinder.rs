@@ -2,9 +2,9 @@ use std::f64::EPSILON;
 
 use glam::DVec3;
 
-use crate::{common::{shapes::Cylinder, Object}, raytracer::cpu::{intersections::{Intersection, Intersections}, shapes::Hittable, Ray}};
+use crate::{common::{shapes::Cylinder, Object}, raytracer::cpu::{intersections::{HittableShape, Intersection, Intersections}, Ray}};
 
-impl Hittable for Cylinder {
+impl HittableShape for Cylinder {
     fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a> {
         fn check_cap(ray: &Ray, t: f64) -> bool {
             let x = ray.origin.x + t * ray.direction.x;

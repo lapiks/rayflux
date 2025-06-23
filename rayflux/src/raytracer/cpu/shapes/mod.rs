@@ -1,4 +1,4 @@
-use crate::{common::{shapes::Shape, Object}, raytracer::cpu::{intersections::Intersections, Ray}};
+use crate::{common::{shapes::Shape, Object}, raytracer::cpu::{intersections::{HittableShape, Intersections}, Ray}};
 
 pub mod sphere;
 pub mod plane;
@@ -11,12 +11,7 @@ pub use plane::*;
 pub use cube::*;
 pub use cylinder::*;
 
-pub trait Hittable {
-    fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a>; 
-    fn normal_at<'a>(&self, point: DVec3) -> DVec3; 
-}
-
-impl Hittable for Shape {
+impl HittableShape for Shape {
     fn intersect<'a>(&self, ray: &Ray, object: &'a Object) -> Intersections<'a> {
         match self {
             Shape::Sphere(sphere) => sphere.intersect(ray, object),

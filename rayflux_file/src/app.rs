@@ -26,7 +26,16 @@ impl App {
             Object::new_sphere()
             .with_transform(
                 Transform::from_translation(
-                    DVec3::new(2.0, 0.0, 0.0)
+                    DVec3::new(1.0, 0.0, 0.0)
+                )
+            )
+        );
+
+        scene.add_object(
+            Object::new_sphere()
+            .with_transform(
+                Transform::from_translation(
+                    DVec3::new(-1.0, 0.0, 0.0)
                 )
             )
         );
