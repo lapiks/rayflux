@@ -26,7 +26,7 @@ impl App {
             Object::new_sphere()
             .with_transform(
                 Transform::from_translation(
-                    DVec3::new(1.0, 0.0, 0.0)
+                    DVec3::new(2.0, 0.0, 0.0)
                 )
             )
         );
@@ -52,7 +52,7 @@ impl App {
                 raytracer.render(&scene);
                 // Save result as image
                 let canvas = raytracer.canvas();
-                let _ = canvas.export("output/cpu/testn.png");
+                let _ = canvas.export("rayflux_file/output/cpu/test.png");
             },
             RaytracerType::Gpu => {
                 // Create gpu context
@@ -72,7 +72,7 @@ impl App {
 
                 // Save result as image
                 let output = raytracer.render_target();
-                pollster::block_on(save_texture_as_png(&context, output, "output/gpu/test.png"));
+                pollster::block_on(save_texture_as_png(&context, output, "rayflux_file/output/gpu/test.png"));
             } 
         };
 

@@ -7,6 +7,7 @@ pub struct Transform {
     scale: DVec3,
     matrix: DMat4,
     inverse_matrix: DMat4,
+    inverse_transpose_matrix: DMat4,
     dirty: bool,
 }
 
@@ -23,6 +24,7 @@ impl Transform {
         scale: DVec3::ONE,
         matrix: DMat4::IDENTITY,
         inverse_matrix: DMat4::IDENTITY,
+        inverse_transpose_matrix: DMat4::IDENTITY,
         dirty: false,
     };
 
@@ -122,12 +124,17 @@ impl Transform {
         self.inverse_matrix
     }
 
+    pub fn inverse_transpose_matrix(&self) -> DMat4 {
+        self.inverse_transpose_matrix
+    }
+
     pub fn update_matrix(&mut self) {
         let t = DMat4::from_translation(self.translation);
         let r = DMat4::from_quat(self.rotation);
         let s = DMat4::from_scale(self.scale);
         self.matrix = t * r * s;
         self.inverse_matrix = self.matrix.inverse();
+        self.inverse_transpose_matrix = self.inverse_matrix.transpose();
         self.dirty = false;
     }
 }

@@ -6,7 +6,8 @@ use crate::{common::{Object, Scene}, raytracer::cpu::{shapes::Hittable, Ray}};
 
 /// Intersect an object with a ray and return the resulting intersections
 pub fn intersect_object<'a>(ray: &Ray, object: &'a Object) -> Intersections<'a> {
-    object.shape().intersect(ray, object)
+    let local_ray = ray.transform(&object.transform().inverse_matrix());
+    object.shape().intersect(&local_ray, object)
 }
 
 /// Intersect all the object of a scene with a ray and return the resulting intersections
@@ -179,18 +180,19 @@ impl<'a> IntersectionInfos<'a> {
         let eyev = -ray.direction;
         let object = intersection.object;
         let local_point = object.transform().inverse_matrix().transform_point3(point);
-        let mut normal = object.shape().normal_at(local_point);
+        let local_normal = object.shape().normal_at(local_point);
+        let mut world_normal = object.transform().inverse_transpose_matrix().transform_vector3(local_normal).normalize();
         let mut inside = false;
-        if normal.dot(eyev) < 0.0 {
+        if world_normal.dot(eyev) < 0.0 {
             inside = true;
-            normal = -normal;
+            world_normal = -world_normal;
         }
 
         Self {
             t,
             object,
             point,
-            normal,
+            normal: world_normal,
         }
     }
 }

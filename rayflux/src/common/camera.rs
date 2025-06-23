@@ -2,7 +2,7 @@ use glam::{UVec2, Vec3};
 
 use crate::common::color::Color;
 
-const DEFAULT_POSITION: Vec3 = Vec3::new(2.5, 2.5, 2.5);
+const DEFAULT_POSITION: Vec3 = Vec3::new(0.0, 0.0, 5.0);
 
 pub struct Camera {
     position: Vec3,
