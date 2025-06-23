@@ -30,8 +30,4 @@ cargo run -p rayflux_file -- --raytracer [cpu|gpu]
 cargo run -p rayflux_window -- --raytracer [cpu|gpu]
 ```
 
-If you don't specify the `--raytracer` argument, the ray tracer will run on **CPU** mode.
-```
-cargo run -p rayflux_file
-cargo run -p rayflux_window
-```
+If you don't specify the `--raytracer` argument, the ray tracer will run by default on **CPU** mode.
