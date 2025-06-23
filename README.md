@@ -29,3 +29,9 @@ You can run the ray tracer using either the **rayflux_file** or **rayflux_window
 cargo run -p rayflux_file -- --raytracer [cpu|gpu]
 cargo run -p rayflux_window -- --raytracer [cpu|gpu]
 ```
+
+If you don't specify the `--raytracer` argument, the ray tracer will run on **CPU** mode.
+```
+cargo run -p rayflux_file
+cargo run -p rayflux_window
+```
