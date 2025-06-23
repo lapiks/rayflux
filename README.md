@@ -10,14 +10,7 @@ You can choose to display the result in real-time in a window or save it as a PN
 - Real-time rendering of the result in a window
 - Result image export as PNG
 
-## Usage
-
-Run the ray tracer with your desired configuration:
-```
-cargo run -- --raytracer [cpu|gpu] --output [window|file]
-```
-
-## Architecture
+## Project architecture
 
 **Rayflux** is separated in three crates:
 - **`rayflux`**
@@ -28,3 +21,11 @@ A **command-line executable** that renders a scene and outputs the result to an 
 
 - **`rayflux_window`**
 A **real-time executable** that displays the rendered scene directly in a window.
+
+## Usage
+
+You can run the ray tracer using either the **rayflux_file** or **rayflux_window** crates. 
+```
+cargo run -p rayflux_file -- --raytracer [cpu|gpu]
+cargo run -p rayflux_window -- --raytracer [cpu|gpu]
+```
