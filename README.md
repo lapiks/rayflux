@@ -23,7 +23,7 @@ cargo run -- --raytracer [cpu|gpu] --output [window|file]
 - **`rayflux`**
 A library crate containing the core ray tracing engine (both CPU and GPU).
 
-- **`rayflux_file`**  
+- **`rayflux_file`**
 A **command-line executable** that renders a scene and outputs the result to an **image file**.  
 
 - **`rayflux_window`**
