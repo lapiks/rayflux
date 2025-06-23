@@ -16,3 +16,15 @@ Run the ray tracer with your desired configuration:
 ```
 cargo run -- --raytracer [cpu|gpu] --output [window|file]
 ```
+
+## Architecture
+
+**Rayflux** is separated in three crates:
+- **`rayflux`**
+A library crate containing the core ray tracing engine (both CPU and GPU).
+
+- **`rayflux_file`**  
+A **command-line executable** that renders a scene and outputs the result to an **image file**.  
+
+- **`rayflux_window`**
+A **real-time executable** that displays the rendered scene directly in a window.
