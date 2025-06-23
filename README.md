@@ -10,9 +10,28 @@ You can choose to display the result in real-time in a window or save it as a PN
 - Real-time rendering of the result in a window
 - Result image export as PNG
 
+## Project architecture
+
+**Rayflux** is separated in three crates:
+- **`rayflux`**
+A library crate containing the core ray tracing engine (both CPU and GPU).
+
+- **`rayflux_file`**
+A **command-line executable** that renders a scene and outputs the result to an **image file**.  
+
+- **`rayflux_window`**
+A **real-time executable** that displays the rendered scene directly in a window.
+
 ## Usage
 
-Run the ray tracer with your desired configuration:
+You can run the ray tracer using either the **rayflux_file** or **rayflux_window** crates. 
 ```
-cargo run -- --raytracer [cpu|gpu] --output [window|file]
+cargo run -p rayflux_file -- --raytracer [cpu|gpu]
+cargo run -p rayflux_window -- --raytracer [cpu|gpu]
+```
+
+If you don't specify the `--raytracer` argument, the ray tracer will run on **CPU** mode.
+```
+cargo run -p rayflux_file
+cargo run -p rayflux_window
 ```
