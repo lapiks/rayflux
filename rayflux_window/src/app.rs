@@ -294,14 +294,6 @@ impl FullScreenRenderer {
         &self.window
     }
 
-    pub fn surface_format(&self) -> wgpu::TextureFormat {
-        self.surface_format
-    }
-
-    pub fn surface_size(&self) -> UVec2 {
-        self.surface_size
-    }
-
     pub fn resize_surface(&mut self, device: &wgpu::Device, new_size: UVec2) {
         self.surface_size = new_size;
 
