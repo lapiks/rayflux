@@ -178,7 +178,8 @@ impl<'a> IntersectionInfos<'a> {
         let point = ray.at(t);
         let eyev = -ray.direction;
         let object = intersection.object;
-        let mut normal = object.shape().normal_at(point);
+        let local_point = object.transform().inverse_matrix().transform_point3(point);
+        let mut normal = object.shape().normal_at(local_point);
         let mut inside = false;
         if normal.dot(eyev) < 0.0 {
             inside = true;

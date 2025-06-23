@@ -48,12 +48,21 @@ impl Object {
         }
     }
 
+    pub fn with_transform(mut self, transform: Transform) -> Self {
+        self.transform = transform;
+        self
+    }
+
     pub fn shape(&self) -> &Shape {
         &self.shape
     }
 
     pub fn transform(&self) -> &Transform {
         &self.transform
+    }
+
+    pub fn transform_mut(&mut self) -> &mut Transform {
+        &mut self.transform
     }
 
     pub fn material(&self) -> &Material {

@@ -1,10 +1,10 @@
 use std::{path::Path, time::Instant};
 
-use glam::UVec2;
+use glam::{DVec3, UVec2};
 use image::{ImageBuffer, Rgba};
 
 use rayflux::{
-    common::{GpuContext, Object, Scene, Texture}, 
+    common::{GpuContext, Object, Scene, Texture, Transform}, 
     raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, RaytracerType}
 };
 
@@ -22,11 +22,23 @@ impl App {
 
         // Create a scene
         let mut scene = Scene::default();
-        scene.add_object(Object::new_sphere());
+        scene.add_object(
+            Object::new_sphere()
+            .with_transform(
+                Transform::from_translation(
+                    DVec3::new(1.0, 0.0, 0.0)
+                )
+            )
+        );
 
         // Prepare camera
         let camera = scene.camera_mut();
         camera.update_aspect_ratio(default_size);
+
+        // Prepare objects
+        for object in scene.objects_mut().iter_mut() {
+            object.transform_mut().update_matrix();
+        }
 
         let now = Instant::now();
 
@@ -38,9 +50,9 @@ impl App {
                 let mut raytracer = CpuRaytracer::new(default_size);
                 // Execute raytracer
                 raytracer.render(&scene);
-                // save result as image
+                // Save result as image
                 let canvas = raytracer.canvas();
-                let _ = canvas.export("output/cpu/test.png");
+                let _ = canvas.export("output/cpu/testn.png");
             },
             RaytracerType::Gpu => {
                 // Create gpu context
@@ -58,7 +70,7 @@ impl App {
                 // Submit command encoder 
                 context.queue().submit(Some(command_encoder.finish()));
 
-                // save result as image
+                // Save result as image
                 let output = raytracer.render_target();
                 pollster::block_on(save_texture_as_png(&context, output, "output/gpu/test.png"));
             } 
