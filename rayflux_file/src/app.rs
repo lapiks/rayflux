@@ -3,16 +3,16 @@ use std::{path::Path, time::Instant};
 use glam::UVec2;
 use image::{ImageBuffer, Rgba};
 
-use crate::{
+use rayflux::{
     common::{GpuContext, Object, Scene, Texture}, 
     raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, RaytracerType}
 };
 
-pub struct FileApp {
+pub struct App {
     raytracer_type: RaytracerType,
 }
 
-impl FileApp {
+impl App {
     pub fn new(raytracer_type: RaytracerType) -> Self {
         Self { raytracer_type }
     }

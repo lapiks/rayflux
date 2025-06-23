@@ -1,5 +1,4 @@
-use crate::output::window::AppContext;
-
+use crate::app::AppContext;
 
 /// Gives access to gui rendering
 pub trait UiFeature {

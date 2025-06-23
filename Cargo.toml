@@ -1,20 +1,6 @@
-[package]
-name = "rayflux"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-bytemuck = "1.23.0"
-clap = { version = "4.5.40", features = ["derive"] }
-egui = "0.31.1"
-egui-wgpu = "0.31.1"
-egui-winit = "0.31.1"
-env_logger = "0.11.8"
-flume = "0.11.1"
-glam = "0.30.3"
-image = "0.24.0"
-log = "0.4.27"
-pollster = "0.4.0"
-rayon = "1.10.0"
-wgpu = "24.0.0"
-winit = "0.30.11"
+[workspace]
+members = [
+    "rayflux",
+    "rayflux_file",
+    "rayflux_window",
+]

@@ -1,0 +1,13 @@
+[package]
+name = "rayflux_file"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rayflux = { path = "../rayflux" }
+clap = { version = "4.5.40", features = ["derive"] }
+flume = "0.11.1"
+glam = "0.30.3"
+image = "0.24.0"
+pollster = "0.4.0"
+wgpu = "24.0.0"

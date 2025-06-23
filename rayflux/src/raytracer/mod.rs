@@ -1,7 +1,6 @@
 use core::fmt;
 
 use clap::ValueEnum;
-use glam::UVec2;
 
 use crate::{common::Texture, raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer}};
 

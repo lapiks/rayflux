@@ -1,23 +1,22 @@
-pub mod ui;
-
 use std::sync::Arc;
 
-use egui_wgpu::ScreenDescriptor;
+use egui_wgpu::{wgpu, ScreenDescriptor};
 use glam::{UVec2, Vec2};
 use winit::{application::ApplicationHandler, dpi::LogicalSize, event::{ElementState, MouseScrollDelta, WindowEvent}, event_loop::ActiveEventLoop, window::{Window, WindowId}};
 
-use crate::{
+use rayflux::{
     common::{GpuContext, Inputs, Scene, Texture, Time}, 
-    output::window::ui::UserInterface, 
     raytracer::{cpu::CpuRaytracer, gpu::GpuRaytracer, Raytracer, RaytracerImpl, RaytracerOutput, RaytracerType}
 };
+
+use crate::ui::UserInterface;
 
 pub struct AppContext<'a> {
     pub time: &'a Time,
 }
 
 #[derive(Default)]
-pub struct WindowApp {
+pub struct App {
     raytracer_type: RaytracerType,
     raytracer: Option<Raytracer>,
     scene: Scene,
@@ -29,7 +28,7 @@ pub struct WindowApp {
     time: Time,
 }
 
-impl WindowApp {
+impl App {
     pub fn new(raytracer_type: RaytracerType) -> Self {
         Self {
             raytracer_type,
@@ -141,7 +140,7 @@ impl WindowApp {
     }
 }
 
-impl ApplicationHandler for WindowApp {
+impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         env_logger::init();
 
