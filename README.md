@@ -14,13 +14,13 @@ You can choose to display the result in real-time in a window or save it as a PN
 
 **Rayflux** is separated in three crates:
 - **`rayflux`**
-A library crate containing the actual ray tracer (both CPU and GPU).
+A **library** crate containing the actual **ray tracer** (both CPU and GPU).
 
 - **`rayflux_file`**
 A **command-line executable** that renders a scene and outputs the result to an **image file**.  
 
 - **`rayflux_window`**
-A **real-time executable** that displays the rendered scene directly in a window.
+A **real-time executable** that displays the rendered scene directly in a **window**.
 
 ## Usage
 
